@@ -1,0 +1,7 @@
+{
+  "name": "stock-consignment-tracker",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix frontend run build -- --outDir ../dist"
+  }
+}
