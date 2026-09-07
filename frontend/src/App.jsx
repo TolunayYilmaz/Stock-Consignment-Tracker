@@ -5,8 +5,10 @@ import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
 import Transactions from './pages/Transactions'
 import Sales from './pages/Sales'
+import Admin from './pages/Admin'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/AdminRoute'
 
 export default function App() {
   return (
@@ -19,6 +21,14 @@ export default function App() {
           <Route path="/customers" element={<Customers />} />
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/sales" element={<Sales />} />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <Admin />
+              </AdminRoute>
+            }
+          />
         </Route>
       </Route>
     </Routes>

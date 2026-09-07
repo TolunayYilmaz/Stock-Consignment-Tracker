@@ -1,8 +1,20 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useSelector } from 'react-redux'
+import { Loader2 } from 'lucide-react'
 
 export default function ProtectedRoute() {
-  const { user, loading } = useAuth()
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Yükleniyor...</div>
+  const { user, loading } = useSelector((state) => state.auth)
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-farm-50">
+        <div className="flex items-center gap-3 rounded-2xl bg-white px-6 py-4 shadow-soft">
+          <Loader2 className="animate-spin text-green-700" size={22} />
+          <span className="text-sm font-medium text-stone-600">Yükleniyor...</span>
+        </div>
+      </div>
+    )
+  }
+
   return user ? <Outlet /> : <Navigate to="/login" replace />
 }

@@ -18,6 +18,7 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+*.log
 
 # IDE / OS
 .vscode/

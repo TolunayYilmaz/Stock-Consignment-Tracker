@@ -12,13 +12,19 @@ from sqlalchemy.orm import Session
 import models
 import schemas
 import services
-from auth import create_access_token, get_current_user, hash_password, verify_password
-from database import Base, engine, get_db
+from auth import (
+    create_access_token,
+    get_current_admin,
+    get_current_user,
+    hash_password,
+    verify_password,
+)
+from database import Base, engine, ensure_schema, get_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
+    ensure_schema()
     yield
 
 
@@ -52,7 +58,11 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     existing = db.query(models.User).filter(models.User.email == user.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Bu email zaten kayıtlı")
-    db_user = models.User(email=user.email, hashed_password=hash_password(user.password))
+    db_user = models.User(
+        email=user.email,
+        hashed_password=hash_password(user.password),
+        is_admin=False,
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -71,6 +81,31 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
 @app.get("/api/me", response_model=schemas.UserOut)
 def me(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+
+# ---------- ADMIN ----------
+@app.get("/api/admin/users", response_model=list[schemas.UserOut])
+def admin_list_users(
+    db: Session = Depends(get_db),
+    _: models.User = Depends(get_current_admin),
+):
+    return db.query(models.User).order_by(models.User.created_at.desc()).all()
+
+
+@app.delete("/api/admin/users/{user_id}", response_model=schemas.UserOut)
+def admin_delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_admin: models.User = Depends(get_current_admin),
+):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+    if user.id == current_admin.id:
+        raise HTTPException(status_code=400, detail="Kendi hesabınızı silemezsiniz")
+    db.delete(user)
+    db.commit()
+    return user
 
 
 # ---------- CUSTOMERS ----------

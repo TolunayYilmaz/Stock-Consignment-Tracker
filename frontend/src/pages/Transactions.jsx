@@ -1,72 +1,66 @@
-import { useState, useEffect } from 'react'
-import api from '../api/client'
+import { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { ArrowLeftRight, Loader2, Save } from 'lucide-react'
+import PageHeader from '../components/PageHeader'
+import ProductBadge from '../components/ProductBadge'
+import { fetchCustomers } from '../store/slices/customersSlice'
+import { addTransaction, fetchTransactions } from '../store/slices/transactionsSlice'
 import { PRODUCTS, TRANSACTION_TYPES } from '../api/constants'
 
-export default function Transactions() {
-  const [customers, setCustomers] = useState([])
-  const [transactions, setTransactions] = useState([])
-  const [form, setForm] = useState({
-    customer_id: '',
-    type: 'Normal Alış',
-    product_name: PRODUCTS[0],
-    quantity: '',
-    price: '',
-    date: '',
-  })
-  const [error, setError] = useState('')
+const typeCls = {
+  Emanet: 'bg-amber-100 text-amber-700',
+  'Emanetten Alış': 'bg-blue-100 text-blue-700',
+  'Normal Alış': 'bg-green-100 text-green-700',
+}
 
-  const fetchData = async () => {
-    const [cRes, tRes] = await Promise.all([api.get('/customers'), api.get('/transactions')])
-    setCustomers(cRes.data)
-    setTransactions(tRes.data)
-  }
+const emptyForm = {
+  customer_id: '',
+  type: 'Emanet',
+  product_name: PRODUCTS[0],
+  quantity: '',
+  price: '',
+  date: '',
+}
+
+export default function Transactions() {
+  const dispatch = useDispatch()
+  const customers = useSelector((state) => state.customers.items)
+  const { items: transactions, loading, error } = useSelector((state) => state.transactions)
+  const [form, setForm] = useState(emptyForm)
+  const [formError, setFormError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    dispatch(fetchCustomers())
+    dispatch(fetchTransactions())
+  }, [dispatch])
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
   const onSubmit = async (e) => {
     e.preventDefault()
-    setError('')
+    setFormError('')
+    setSubmitting(true)
     try {
-      const payload = {
-        customer_id: Number(form.customer_id),
-        type: form.type,
-        product_name: form.product_name,
-        quantity: parseFloat(form.quantity),
-        price: parseFloat(form.price) || 0,
-      }
-      if (form.date) payload.date = new Date(form.date).toISOString()
-      await api.post('/transactions', payload)
-      setForm({
-        customer_id: '',
-        type: 'Normal Alış',
-        product_name: PRODUCTS[0],
-        quantity: '',
-        price: '',
-        date: '',
-      })
-      fetchData()
+      await dispatch(addTransaction(form)).unwrap()
+      setForm(emptyForm)
     } catch (err) {
-      setError(err.response?.data?.detail || 'İşlem kaydedilemedi')
+      setFormError(err.response?.data?.detail || 'İşlem kaydedilemedi')
+    } finally {
+      setSubmitting(false)
     }
   }
 
+  const totalZarar = transactions.reduce((s, t) => s + t.quantity * t.price, 0)
+
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Alış ve Emanet İşlemleri</h1>
-      <form onSubmit={onSubmit} className="bg-white rounded-lg shadow p-4 mb-6 grid grid-cols-2 md:grid-cols-6 gap-3">
+      <PageHeader icon={ArrowLeftRight} title="Alış ve Emanet İşlemleri" subtitle="Yeni işlem ekle ve geçmişi gör" />
+
+      <form onSubmit={onSubmit} className="card mb-6 grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Müşteri</label>
-          <select
-            name="customer_id"
-            value={form.customer_id}
-            onChange={onChange}
-            required
-            className="w-full px-2 py-2 border rounded-md"
-          >
+          <label className="label">Müşteri</label>
+          <select name="customer_id" value={form.customer_id} onChange={onChange} required className="input-field">
             <option value="">Seçin</option>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>
@@ -76,8 +70,8 @@ export default function Transactions() {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">İşlem Tipi</label>
-          <select name="type" value={form.type} onChange={onChange} className="w-full px-2 py-2 border rounded-md">
+          <label className="label">İşlem Tipi</label>
+          <select name="type" value={form.type} onChange={onChange} className="input-field">
             {TRANSACTION_TYPES.map((t) => (
               <option key={t} value={t}>
                 {t}
@@ -86,8 +80,8 @@ export default function Transactions() {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Ürün</label>
-          <select name="product_name" value={form.product_name} onChange={onChange} className="w-full px-2 py-2 border rounded-md">
+          <label className="label">Ürün</label>
+          <select name="product_name" value={form.product_name} onChange={onChange} className="input-field">
             {PRODUCTS.map((p) => (
               <option key={p} value={p}>
                 {p}
@@ -96,20 +90,11 @@ export default function Transactions() {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Miktar (kg)</label>
-          <input
-            type="number"
-            step="any"
-            min="0"
-            name="quantity"
-            value={form.quantity}
-            onChange={onChange}
-            required
-            className="w-full px-2 py-2 border rounded-md"
-          />
+          <label className="label">Miktar (ton)</label>
+          <input type="number" step="any" min="0" name="quantity" value={form.quantity} onChange={onChange} required className="input-field" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Fiyat (₺/kg)</label>
+          <label className="label">Fiyat (₺/kg)</label>
           <input
             type="number"
             step="any"
@@ -118,64 +103,65 @@ export default function Transactions() {
             value={form.price}
             onChange={onChange}
             disabled={form.type === 'Emanet'}
-            className="w-full px-2 py-2 border rounded-md disabled:bg-gray-100"
+            className="input-field disabled:bg-stone-100"
           />
-          {form.type === 'Emanet' && (
-            <p className="text-[10px] text-green-600 mt-0.5">Emanette fiyat otomatik 0</p>
-          )}
+          {form.type === 'Emanet' && <p className="mt-1 text-[11px] text-amber-600">Emanette fiyat otomatik 0</p>}
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Tarih</label>
-          <input type="date" name="date" value={form.date} onChange={onChange} className="w-full px-2 py-2 border rounded-md" />
+          <label className="label">Tarih</label>
+          <input type="date" name="date" value={form.date} onChange={onChange} className="input-field" />
         </div>
-        <div className="col-span-2 md:col-span-6">
-          <button type="submit" className="px-5 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-            Kaydet
+        <div className="sm:col-span-2 lg:col-span-3">
+          <button type="submit" disabled={submitting} className="btn-primary">
+            <Save size={16} />
+            İşlemi Kaydet
           </button>
         </div>
+        {formError && <p className="text-sm text-red-600 sm:col-span-2 lg:col-span-3">{formError}</p>}
       </form>
-      {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
 
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-gray-100 text-left">
-              <th className="p-3">Tarih</th>
-              <th className="p-3">Müşteri</th>
-              <th className="p-3">İşlem</th>
-              <th className="p-3">Ürün</th>
-              <th className="p-3">Miktar (kg)</th>
-              <th className="p-3">Fiyat (₺/kg)</th>
-              <th className="p-3">Tutar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.map((t) => (
-              <tr key={t.id} className="border-t">
-                <td className="p-3">{new Date(t.date).toLocaleDateString('tr-TR')}</td>
-                <td className="p-3">{t.customer_name}</td>
-                <td className="p-3">
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      t.type === 'Emanet'
-                        ? 'bg-amber-100 text-amber-700'
-                        : t.type === 'Emanetten Alış'
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'bg-green-100 text-green-700'
-                    }`}
-                  >
-                    {t.type}
-                  </span>
-                </td>
-                <td className="p-3">{t.product_name}</td>
-                <td className="p-3">{t.quantity.toLocaleString('tr-TR')}</td>
-                <td className="p-3">{t.price.toLocaleString('tr-TR')}</td>
-                <td className="p-3">{(t.quantity * t.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}</td>
+      {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+
+      <div className="card overflow-x-auto">
+        {loading ? (
+          <div className="flex items-center justify-center p-10">
+            <Loader2 className="animate-spin text-green-700" />
+          </div>
+        ) : (
+          <table className="w-full min-w-[860px] text-sm">
+            <thead>
+              <tr className="border-b border-stone-100 bg-stone-50">
+                <th className="th">Tarih</th>
+                <th className="th">Müşteri</th>
+                <th className="th">İşlem</th>
+                <th className="th">Ürün</th>
+                <th className="th">Miktar (ton)</th>
+                <th className="th">Fiyat (₺/kg)</th>
+                <th className="th">Tutar</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {transactions.length === 0 && <p className="p-4 text-gray-500">Henüz işlem eklenmemiş.</p>}
+            </thead>
+            <tbody>
+              {transactions.map((t) => (
+                <tr key={t.id} className="border-b border-stone-50 hover:bg-farm-50/50">
+                  <td className="td">{new Date(t.date).toLocaleDateString('tr-TR')}</td>
+                  <td className="td font-semibold text-stone-800">{t.customer_name}</td>
+                  <td className="td">
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeCls[t.type] || 'bg-stone-100 text-stone-600'}`}>
+                      {t.type}
+                    </span>
+                  </td>
+                  <td className="td">
+                    <ProductBadge product={t.product_name} />
+                  </td>
+                  <td className="td">{t.quantity.toLocaleString('tr-TR')}</td>
+                  <td className="td">{t.price.toLocaleString('tr-TR')}</td>
+                  <td className="td font-medium">{totalZarar >= 0 && (t.quantity * t.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {!loading && transactions.length === 0 && <p className="p-4 text-stone-500">Henüz işlem eklenmemiş.</p>}
       </div>
     </div>
   )
