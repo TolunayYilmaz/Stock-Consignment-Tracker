@@ -1,0 +1,29 @@
+# Environment files - ASLA commit edilmemeli
+.env
+.env.local
+.env.production
+**/.env
+**/.env.*
+# Su template dosyalari repoda tutulur
+!.env.example
+!**/.env.example
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel/
