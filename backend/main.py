@@ -22,7 +22,13 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Stock Consignment Tracker API", lifespan=lifespan)
+app = FastAPI(
+    title="Stock Consignment Tracker API",
+    lifespan=lifespan,
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
+)
 
 app.add_middleware(
     CORSMiddleware,
