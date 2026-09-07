@@ -1,3 +1,9 @@
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from contextlib import asynccontextmanager
 from datetime import datetime
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,9 +15,14 @@ import services
 from auth import create_access_token, get_current_user, hash_password, verify_password
 from database import Base, engine, get_db
 
-Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Stok, Emanet ve Kâr/Zarar Takip Sistemi")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(title="Stock Consignment Tracker API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,7 +41,7 @@ def _txn_out(t: models.Transaction) -> schemas.TransactionOut:
 
 
 # ---------- AUTH ----------
-@app.post("/register", response_model=schemas.UserOut)
+@app.post("/api/register", response_model=schemas.UserOut)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     existing = db.query(models.User).filter(models.User.email == user.email).first()
     if existing:
@@ -42,7 +53,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return db_user
 
 
-@app.post("/token", response_model=schemas.Token)
+@app.post("/api/token", response_model=schemas.Token)
 def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if not db_user or not verify_password(user.password, db_user.hashed_password):
@@ -51,13 +62,13 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
     return schemas.Token(access_token=token)
 
 
-@app.get("/me", response_model=schemas.UserOut)
+@app.get("/api/me", response_model=schemas.UserOut)
 def me(current_user: models.User = Depends(get_current_user)):
     return current_user
 
 
 # ---------- CUSTOMERS ----------
-@app.get("/customers", response_model=list[schemas.CustomerBalance])
+@app.get("/api/customers", response_model=list[schemas.CustomerBalance])
 def list_customers(db: Session = Depends(get_db), _: models.User = Depends(get_current_user)):
     customers = db.query(models.Customer).order_by(models.Customer.name).all()
     result = []
@@ -73,7 +84,7 @@ def list_customers(db: Session = Depends(get_db), _: models.User = Depends(get_c
     return result
 
 
-@app.post("/customers", response_model=schemas.CustomerOut)
+@app.post("/api/customers", response_model=schemas.CustomerOut)
 def create_customer(data: schemas.CustomerCreate, db: Session = Depends(get_db), _: models.User = Depends(get_current_user)):
     existing = db.query(models.Customer).filter(models.Customer.name == data.name).first()
     if existing:
@@ -86,13 +97,13 @@ def create_customer(data: schemas.CustomerCreate, db: Session = Depends(get_db),
 
 
 # ---------- TRANSACTIONS ----------
-@app.get("/transactions", response_model=list[schemas.TransactionOut])
+@app.get("/api/transactions", response_model=list[schemas.TransactionOut])
 def list_transactions(db: Session = Depends(get_db), _: models.User = Depends(get_current_user)):
     txns = db.query(models.Transaction).order_by(models.Transaction.date.desc()).all()
     return [_txn_out(t) for t in txns]
 
 
-@app.post("/transactions", response_model=schemas.TransactionOut)
+@app.post("/api/transactions", response_model=schemas.TransactionOut)
 def create_transaction(data: schemas.TransactionCreate, db: Session = Depends(get_db), _: models.User = Depends(get_current_user)):
     customer = db.query(models.Customer).filter(models.Customer.id == data.customer_id).first()
     if not customer:
@@ -104,12 +115,12 @@ def create_transaction(data: schemas.TransactionCreate, db: Session = Depends(ge
 
 
 # ---------- SALES ----------
-@app.get("/sales", response_model=list[schemas.SaleOut])
+@app.get("/api/sales", response_model=list[schemas.SaleOut])
 def list_sales(db: Session = Depends(get_db), _: models.User = Depends(get_current_user)):
     return db.query(models.Sale).order_by(models.Sale.date.desc()).all()
 
 
-@app.post("/sales", response_model=schemas.SaleOut)
+@app.post("/api/sales", response_model=schemas.SaleOut)
 def create_sale(data: schemas.SaleCreate, db: Session = Depends(get_db), _: models.User = Depends(get_current_user)):
     sale = models.Sale(
         customer_name=data.customer_name,
@@ -125,6 +136,6 @@ def create_sale(data: schemas.SaleCreate, db: Session = Depends(get_db), _: mode
 
 
 # ---------- DASHBOARD ----------
-@app.get("/dashboard", response_model=list[schemas.DashboardRow])
+@app.get("/api/dashboard", response_model=list[schemas.DashboardRow])
 def dashboard(db: Session = Depends(get_db), _: models.User = Depends(get_current_user)):
     return services.get_dashboard(db)
