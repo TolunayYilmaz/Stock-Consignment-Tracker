@@ -23,9 +23,6 @@ from auth import (
 )
 from database import Base, engine, ensure_schema, get_db
 
-# Sistem hesapları: doğrulama ve onay adımlarını otomatik geçer (kilitlenme riski yok)
-VERIFIED_WHITELIST = {"tolunay894@gmail.com", "mock@test.com"}
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -63,24 +60,22 @@ def register(user: schemas.UserCreate, request: Request, db: Session = Depends(g
     existing = db.query(models.User).filter(models.User.email == user.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Bu email zaten kayıtlı")
-    auto_unlocked = user.email.lower() in VERIFIED_WHITELIST
     db_user = models.User(
         email=user.email,
         hashed_password=hash_password(user.password),
         is_admin=False,
-        is_verified=auto_unlocked,
-        is_approved=auto_unlocked,
-        verification_token=None if auto_unlocked else secrets.token_urlsafe(32),
+        is_verified=False,
+        is_approved=False,
+        verification_token=secrets.token_urlsafe(32),
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    if not auto_unlocked:
-        email_service.send_verification_email(
-            db_user.email,
-            db_user.verification_token,
-            str(request.base_url),
-        )
+    email_service.send_verification_email(
+        db_user.email,
+        db_user.verification_token,
+        str(request.base_url),
+    )
     return db_user
 
 
