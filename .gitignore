@@ -20,6 +20,11 @@ __pycache__/
 venv/
 *.log
 
+# Seed / veri dosyalari (hassas gercek veri icerir)
+seed.py
+seed_data.*
+*.xlsx
+
 # IDE / OS
 .vscode/
 .idea/
