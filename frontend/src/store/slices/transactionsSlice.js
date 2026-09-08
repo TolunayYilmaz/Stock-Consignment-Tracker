@@ -1,10 +1,19 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import api from '../../api/client'
+import { logout } from './authSlice'
 
-export const fetchTransactions = createAsyncThunk('transactions/fetch', async () => {
-  const res = await api.get('/transactions')
-  return res.data
-})
+export const fetchTransactions = createAsyncThunk(
+  'transactions/fetch',
+  async ({ force } = {}) => (await api.get('/transactions')).data,
+  {
+    condition: ({ force } = {}, { getState }) => {
+      const state = getState().transactions
+      if (state.loading) return false
+      if (force) return true
+      return !state.loaded
+    },
+  }
+)
 
 export const addTransaction = createAsyncThunk(
   'transactions/add',
@@ -17,15 +26,15 @@ export const addTransaction = createAsyncThunk(
       price: parseFloat(price) || 0,
     }
     if (date) payload.date = new Date(date).toISOString()
-    const res = await api.post('/transactions', payload)
-    dispatch(fetchTransactions())
-    return res.data
+    await api.post('/transactions', payload)
+    await dispatch(fetchTransactions({ force: true }))
   }
 )
 
 const initialState = {
   items: [],
   loading: false,
+  loaded: false,
   error: '',
 }
 
@@ -44,11 +53,14 @@ export const transactionsSlice = createSlice({
       .addCase(fetchTransactions.fulfilled, (state, action) => {
         state.items = action.payload
         state.loading = false
+        state.loaded = true
       })
       .addCase(fetchTransactions.rejected, (state, action) => {
         state.loading = false
         state.error = action.error?.message || 'İşlemler alınamadı'
       })
+      .addCase('auth/login/fulfilled', () => initialState)
+      .addCase(logout.fulfilled, () => initialState)
   },
 })
 

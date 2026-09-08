@@ -103,6 +103,10 @@ def admin_delete_user(
         raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
     if user.id == current_admin.id:
         raise HTTPException(status_code=400, detail="Kendi hesabınızı silemezsiniz")
+    # Cascade: kullanıcının tüm verilerini temizle (FK NOT NULL nedeniyle)
+    db.query(models.Sale).filter(models.Sale.user_id == user.id).delete(synchronize_session=False)
+    db.query(models.Transaction).filter(models.Transaction.user_id == user.id).delete(synchronize_session=False)
+    db.query(models.Customer).filter(models.Customer.user_id == user.id).delete(synchronize_session=False)
     db.delete(user)
     db.commit()
     return user
@@ -110,8 +114,13 @@ def admin_delete_user(
 
 # ---------- CUSTOMERS ----------
 @app.get("/api/customers", response_model=list[schemas.CustomerBalance])
-def list_customers(db: Session = Depends(get_db), _: models.User = Depends(get_current_user)):
-    customers = db.query(models.Customer).order_by(models.Customer.name).all()
+def list_customers(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    customers = (
+        db.query(models.Customer)
+        .filter(models.Customer.user_id == current_user.id)
+        .order_by(models.Customer.name)
+        .all()
+    )
     result = []
     for c in customers:
         result.append(
@@ -119,18 +128,22 @@ def list_customers(db: Session = Depends(get_db), _: models.User = Depends(get_c
                 id=c.id,
                 name=c.name,
                 created_at=c.created_at,
-                balances=services.customer_emanet_balances(db, c.id),
+                balances=services.customer_emanet_balances(db, c.id, current_user.id),
             )
         )
     return result
 
 
 @app.post("/api/customers", response_model=schemas.CustomerOut)
-def create_customer(data: schemas.CustomerCreate, db: Session = Depends(get_db), _: models.User = Depends(get_current_user)):
-    existing = db.query(models.Customer).filter(models.Customer.name == data.name).first()
+def create_customer(data: schemas.CustomerCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    existing = (
+        db.query(models.Customer)
+        .filter(models.Customer.user_id == current_user.id, models.Customer.name == data.name)
+        .first()
+    )
     if existing:
         raise HTTPException(status_code=400, detail="Bu müşteri zaten kayıtlı")
-    customer = models.Customer(name=data.name)
+    customer = models.Customer(name=data.name, user_id=current_user.id)
     db.add(customer)
     db.commit()
     db.refresh(customer)
@@ -139,17 +152,29 @@ def create_customer(data: schemas.CustomerCreate, db: Session = Depends(get_db),
 
 # ---------- TRANSACTIONS ----------
 @app.get("/api/transactions", response_model=list[schemas.TransactionOut])
-def list_transactions(db: Session = Depends(get_db), _: models.User = Depends(get_current_user)):
-    txns = db.query(models.Transaction).order_by(models.Transaction.date.desc()).all()
+def list_transactions(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    txns = (
+        db.query(models.Transaction)
+        .filter(models.Transaction.user_id == current_user.id)
+        .order_by(models.Transaction.date.desc())
+        .all()
+    )
     return [_txn_out(t) for t in txns]
 
 
 @app.post("/api/transactions", response_model=schemas.TransactionOut)
-def create_transaction(data: schemas.TransactionCreate, db: Session = Depends(get_db), _: models.User = Depends(get_current_user)):
-    customer = db.query(models.Customer).filter(models.Customer.id == data.customer_id).first()
+def create_transaction(data: schemas.TransactionCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    customer = (
+        db.query(models.Customer)
+        .filter(
+            models.Customer.id == data.customer_id,
+            models.Customer.user_id == current_user.id,
+        )
+        .first()
+    )
     if not customer:
         raise HTTPException(status_code=400, detail="Müşteri bulunamadı")
-    txn = services.create_transaction(db, data)
+    txn = services.create_transaction(db, data, current_user.id)
     out = schemas.TransactionOut.from_orm(txn)
     out.customer_name = customer.name
     return out
@@ -157,13 +182,19 @@ def create_transaction(data: schemas.TransactionCreate, db: Session = Depends(ge
 
 # ---------- SALES ----------
 @app.get("/api/sales", response_model=list[schemas.SaleOut])
-def list_sales(db: Session = Depends(get_db), _: models.User = Depends(get_current_user)):
-    return db.query(models.Sale).order_by(models.Sale.date.desc()).all()
+def list_sales(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    return (
+        db.query(models.Sale)
+        .filter(models.Sale.user_id == current_user.id)
+        .order_by(models.Sale.date.desc())
+        .all()
+    )
 
 
 @app.post("/api/sales", response_model=schemas.SaleOut)
-def create_sale(data: schemas.SaleCreate, db: Session = Depends(get_db), _: models.User = Depends(get_current_user)):
+def create_sale(data: schemas.SaleCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     sale = models.Sale(
+        user_id=current_user.id,
         customer_name=data.customer_name,
         product_name=data.product_name,
         quantity=data.quantity,
@@ -178,5 +209,5 @@ def create_sale(data: schemas.SaleCreate, db: Session = Depends(get_db), _: mode
 
 # ---------- DASHBOARD ----------
 @app.get("/api/dashboard", response_model=list[schemas.DashboardRow])
-def dashboard(db: Session = Depends(get_db), _: models.User = Depends(get_current_user)):
-    return services.get_dashboard(db)
+def dashboard(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    return services.get_dashboard(db, current_user.id)

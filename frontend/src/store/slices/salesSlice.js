@@ -1,10 +1,19 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import api from '../../api/client'
+import { logout } from './authSlice'
 
-export const fetchSales = createAsyncThunk('sales/fetch', async () => {
-  const res = await api.get('/sales')
-  return res.data
-})
+export const fetchSales = createAsyncThunk(
+  'sales/fetch',
+  async ({ force } = {}) => (await api.get('/sales')).data,
+  {
+    condition: ({ force } = {}, { getState }) => {
+      const state = getState().sales
+      if (state.loading) return false
+      if (force) return true
+      return !state.loaded
+    },
+  }
+)
 
 export const addSale = createAsyncThunk(
   'sales/add',
@@ -16,15 +25,15 @@ export const addSale = createAsyncThunk(
       price: parseFloat(price) || 0,
     }
     if (date) payload.date = new Date(date).toISOString()
-    const res = await api.post('/sales', payload)
-    dispatch(fetchSales())
-    return res.data
+    await api.post('/sales', payload)
+    await dispatch(fetchSales({ force: true }))
   }
 )
 
 const initialState = {
   items: [],
   loading: false,
+  loaded: false,
   error: '',
 }
 
@@ -43,11 +52,14 @@ export const salesSlice = createSlice({
       .addCase(fetchSales.fulfilled, (state, action) => {
         state.items = action.payload
         state.loading = false
+        state.loaded = true
       })
       .addCase(fetchSales.rejected, (state, action) => {
         state.loading = false
         state.error = action.error?.message || 'Satışlar alınamadı'
       })
+      .addCase('auth/login/fulfilled', () => initialState)
+      .addCase(logout.fulfilled, () => initialState)
   },
 })
 

@@ -12,10 +12,11 @@ TYPE_EMANET = "Emanet"
 TYPE_EMANETTEN_ALIS = "Emanetten Alış"
 
 
-def create_transaction(db: Session, data) -> models.Transaction:
+def create_transaction(db: Session, data, user_id: int) -> models.Transaction:
     # Emanet ise fiyat her zaman 0 olmalı
     price = 0.0 if data.type == TYPE_EMANET else (data.price or 0.0)
     txn = models.Transaction(
+        user_id=user_id,
         customer_id=data.customer_id,
         type=data.type,
         product_name=data.product_name,
@@ -29,13 +30,14 @@ def create_transaction(db: Session, data) -> models.Transaction:
     return txn
 
 
-def customer_emanet_balances(db: Session, customer_id: int) -> dict:
-    """Müşterinin her üründeki kalan emaneti: Emanet - Emanetten Alış"""
+def customer_emanet_balances(db: Session, customer_id: int, user_id: int) -> dict:
+    """Müşterinin her üründeki kalan emaneti: Emanet - Emanetten Alış (yalnızca kendi tenant'ı)."""
     result = {}
     for product in PRODUCTS:
         emanet = (
             db.query(func.coalesce(func.sum(models.Transaction.quantity), 0.0))
             .filter(
+                models.Transaction.user_id == user_id,
                 models.Transaction.customer_id == customer_id,
                 models.Transaction.product_name == product,
                 models.Transaction.type == TYPE_EMANET,
@@ -45,6 +47,7 @@ def customer_emanet_balances(db: Session, customer_id: int) -> dict:
         emanetten_alis = (
             db.query(func.coalesce(func.sum(models.Transaction.quantity), 0.0))
             .filter(
+                models.Transaction.user_id == user_id,
                 models.Transaction.customer_id == customer_id,
                 models.Transaction.product_name == product,
                 models.Transaction.type == TYPE_EMANETTEN_ALIS,
@@ -55,8 +58,8 @@ def customer_emanet_balances(db: Session, customer_id: int) -> dict:
     return result
 
 
-def get_dashboard(db: Session):
-    """Ürün bazlı özet ve kâr/zarar hesaplama."""
+def get_dashboard(db: Session, user_id: int):
+    """Ürün bazlı özet ve kâr/zarar hesaplama (yalnızca kullanıcının kendi verileri)."""
     rows = []
 
     for product in PRODUCTS:
@@ -64,6 +67,7 @@ def get_dashboard(db: Session):
         bought_quantity = (
             db.query(func.coalesce(func.sum(models.Transaction.quantity), 0.0))
             .filter(
+                models.Transaction.user_id == user_id,
                 models.Transaction.product_name == product,
                 models.Transaction.type.in_([TYPE_NORMAL, TYPE_EMANETTEN_ALIS]),
             )
@@ -72,6 +76,7 @@ def get_dashboard(db: Session):
         bought_amount = (
             db.query(func.coalesce(func.sum(models.Transaction.quantity * models.Transaction.price), 0.0))
             .filter(
+                models.Transaction.user_id == user_id,
                 models.Transaction.product_name == product,
                 models.Transaction.type.in_([TYPE_NORMAL, TYPE_EMANETTEN_ALIS]),
             )
@@ -81,12 +86,20 @@ def get_dashboard(db: Session):
         # Emanet - Emanetten Alış (satın alınmayan emanet = emanet balansı)
         emanet_qty = (
             db.query(func.coalesce(func.sum(models.Transaction.quantity), 0.0))
-            .filter(models.Transaction.product_name == product, models.Transaction.type == TYPE_EMANET)
+            .filter(
+                models.Transaction.user_id == user_id,
+                models.Transaction.product_name == product,
+                models.Transaction.type == TYPE_EMANET,
+            )
             .scalar()
         )
         emanetten_alis_qty = (
             db.query(func.coalesce(func.sum(models.Transaction.quantity), 0.0))
-            .filter(models.Transaction.product_name == product, models.Transaction.type == TYPE_EMANETTEN_ALIS)
+            .filter(
+                models.Transaction.user_id == user_id,
+                models.Transaction.product_name == product,
+                models.Transaction.type == TYPE_EMANETTEN_ALIS,
+            )
             .scalar()
         )
         emanet_balance = (emanet_qty or 0.0) - (emanetten_alis_qty or 0.0)
@@ -94,12 +107,18 @@ def get_dashboard(db: Session):
         # Güncel fiziksel depo stoğu: (tüm normal alış + tüm emanet) - tüm satışlar
         total_bought_incl_emanet = (
             db.query(func.coalesce(func.sum(models.Transaction.quantity), 0.0))
-            .filter(models.Transaction.product_name == product)
+            .filter(
+                models.Transaction.user_id == user_id,
+                models.Transaction.product_name == product,
+            )
             .scalar()
         )
         sold_quantity = (
             db.query(func.coalesce(func.sum(models.Sale.quantity), 0.0))
-            .filter(models.Sale.product_name == product)
+            .filter(
+                models.Sale.user_id == user_id,
+                models.Sale.product_name == product,
+            )
             .scalar()
         )
         physical_stock = (total_bought_incl_emanet or 0.0) - (sold_quantity or 0.0)
@@ -107,7 +126,10 @@ def get_dashboard(db: Session):
         # Satışlar
         sold_amount = (
             db.query(func.coalesce(func.sum(models.Sale.quantity * models.Sale.price), 0.0))
-            .filter(models.Sale.product_name == product)
+            .filter(
+                models.Sale.user_id == user_id,
+                models.Sale.product_name == product,
+            )
             .scalar()
         )
 

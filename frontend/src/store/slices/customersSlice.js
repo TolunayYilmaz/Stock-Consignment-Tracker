@@ -1,20 +1,30 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import api from '../../api/client'
+import { logout } from './authSlice'
 
-export const fetchCustomers = createAsyncThunk('customers/fetch', async () => {
-  const res = await api.get('/customers')
-  return res.data
-})
+export const fetchCustomers = createAsyncThunk(
+  'customers/fetch',
+  async ({ force } = {}) => (await api.get('/customers')).data,
+  {
+    // Yalnızca daha önce yüklenmemişse veya açıkça force edilmişse API çağır
+    condition: ({ force } = {}, { getState }) => {
+      const state = getState().customers
+      if (state.loading) return false
+      if (force) return true
+      return !state.loaded
+    },
+  }
+)
 
 export const addCustomer = createAsyncThunk('customers/add', async ({ name }, { dispatch }) => {
-  const res = await api.post('/customers', { name: name.trim() })
-  dispatch(fetchCustomers())
-  return res.data
+  await api.post('/customers', { name: name.trim() })
+  await dispatch(fetchCustomers({ force: true }))
 })
 
 const initialState = {
   items: [],
   loading: false,
+  loaded: false,
   error: '',
 }
 
@@ -33,11 +43,14 @@ export const customersSlice = createSlice({
       .addCase(fetchCustomers.fulfilled, (state, action) => {
         state.items = action.payload
         state.loading = false
+        state.loaded = true
       })
       .addCase(fetchCustomers.rejected, (state, action) => {
         state.loading = false
         state.error = action.error?.message || 'Müşteriler alınamadı'
       })
+      .addCase('auth/login/fulfilled', () => initialState)
+      .addCase(logout.fulfilled, () => initialState)
   },
 })
 
