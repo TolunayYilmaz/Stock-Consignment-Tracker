@@ -3,11 +3,12 @@ import FileSaver from 'file-saver'
 const saveAs = FileSaver.saveAs ?? FileSaver.default?.saveAs
 
 const PRODUCTS = ['Arpa', 'Buğday', 'Mısır', 'Yağlık Ayçekirdeği', 'Çerezlik Çekirdek']
+const MAX_ROW = 500
 
-const HEADER_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF47762A' } }
+const HEADER_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2F75B5' } }
 const HEADER_FONT = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 }
-const TOTAL_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCE8CE' } }
-const TOTAL_FONT = { bold: true, size: 11 }
+const TON_FMT = '#,##0.00'
+const TL_FMT = '#,##0.00 "TL"'
 
 function fmtDate(d) {
   const dt = new Date(d)
@@ -22,115 +23,141 @@ function headerRow(ws, headers) {
     cell.fill = HEADER_FILL
     cell.font = HEADER_FONT
     cell.alignment = { vertical: 'middle', horizontal: 'center' }
-    cell.border = { bottom: { style: 'thin', color: { argb: 'FF36531F' } } }
   })
   return row
 }
 
-function styling(ws) {
-  ws.views = [{ state: 'frozen', ySplit: 1 }]
-  ws.eachRow((row) => {
-    row.eachCell({ includeEmpty: false }, (cell) => {
-      cell.border = { top: { style: 'thin', color: { argb: 'FFEFE7DE' } }, bottom: { style: 'thin', color: { argb: 'FFEFE7DE' } } }
-    })
-  })
-}
-
-export function buildWorkbook({ customers = [], transactions = [], sales = [], dashboard = [] }, ExcelJS) {
+export function buildWorkbook({ customers = [], transactions = [], sales = [] }, ExcelJS) {
   const wb = new ExcelJS.Workbook()
   wb.creator = 'Stok Emanet Takip'
   wb.created = new Date()
   wb.calcProperties.fullCalcOnLoad = true
 
-  const wsCustomers = wb.addWorksheet('Müşteri Listesi')
-  wsCustomers.columns = [{ width: 32 }, ...PRODUCTS.map(() => ({ width: 18 }))]
-  headerRow(wsCustomers, ['Müşteri Adı', ...PRODUCTS.map((p) => `${p} (ton)`)])
-  for (const c of customers) {
-    wsCustomers.addRow([c.name, ...PRODUCTS.map((p) => c.balances?.[p] ?? 0)])
-  }
-  styling(wsCustomers)
-
   const wsTx = wb.addWorksheet('İşlemler')
-  wsTx.columns = [{ width: 12 }, { width: 30 }, { width: 14 }, { width: 20 }, { width: 13 }, { width: 13 }, { width: 16 }]
-  headerRow(wsTx, ['Tarih', 'Müşteri', 'İşlem Tipi', 'Ürün', 'Miktar (ton)', 'Fiyat (₺/kg)', 'Toplam Tutar (TL)'])
-  transactions.forEach((t, i) => {
-    const r = i + 2
-    wsTx.addRow([fmtDate(t.date), t.customer_name, t.type, t.product_name, t.quantity, t.price, null])
-    wsTx.getCell(`G${r}`).value = { formula: `E${r}*F${r}`, result: +(t.quantity * t.price).toFixed(2) }
-  })
-  if (transactions.length) {
-    const r = transactions.length + 2
-    const row = wsTx.addRow([null, 'TOPLAM', null, null, null, null, null])
-    row.getCell(2).font = TOTAL_FONT
-    row.eachCell({ includeEmpty: true }, (cell) => (cell.fill = TOTAL_FILL))
-    wsTx.getCell(`G${r}`).value = { formula: `SUM(G2:G${r - 1})` }
-  }
-  styling(wsTx)
+  wsTx.views = [{ state: 'frozen', ySplit: 1 }]
+  wsTx.columns = [{ width: 13 }, { width: 25 }, { width: 14 }, { width: 7 }, { width: 15 }, { width: 28 }, { width: 35 }, { width: 35 }]
+  headerRow(wsTx, ['Tarih', 'Müşteri', 'İşlem Türü', 'Ürün', 'Miktar (Ton)', 'Fiyat (TL)', 'Toplam Tutar (TL)', 'Güncel Kalan Emanet (Ton)'])
 
   const wsSales = wb.addWorksheet('Satışlar')
-  wsSales.columns = [{ width: 12 }, { width: 30 }, { width: 20 }, { width: 13 }, { width: 17 }, { width: 16 }]
-  headerRow(wsSales, ['Tarih', 'Müşteri', 'Ürün', 'Miktar (ton)', 'Satış Fiyatı (₺/kg)', 'Toplam Tutar (TL)'])
-  sales.forEach((s, i) => {
-    const r = i + 2
-    wsSales.addRow([fmtDate(s.date), s.customer_name, s.product_name, s.quantity, s.price, null])
-    wsSales.getCell(`F${r}`).value = { formula: `D${r}*E${r}`, result: +(s.quantity * s.price).toFixed(2) }
-  })
-  if (sales.length) {
-    const r = sales.length + 2
-    const row = wsSales.addRow([null, 'TOPLAM', null, null, null, null])
-    row.getCell(2).font = TOTAL_FONT
-    row.eachCell({ includeEmpty: true }, (cell) => (cell.fill = TOTAL_FILL))
-    wsSales.getCell(`F${r}`).value = { formula: `SUM(F2:F${r - 1})` }
-  }
-  styling(wsSales)
+  wsSales.views = [{ state: 'frozen', ySplit: 1 }]
+  wsSales.columns = [{ width: 13 }, { width: 25 }, { width: 9 }, { width: 15 }, { width: 20 }, { width: 35 }]
+  headerRow(wsSales, ['Tarih', 'Müşteri (Satılan Kişi)', 'Ürün', 'Miktar (Ton)', 'Satış Fiyatı (TL)', 'Toplam Tutar (TL)'])
+
+  const wsCustomers = wb.addWorksheet('Müşteri Listesi')
+  wsCustomers.views = [{ state: 'frozen', ySplit: 1 }]
+  wsCustomers.columns = [{ width: 35 }, { width: 30 }, { width: 35 }, { width: 35 }, { width: 35 }, { width: 35 }, { width: 35 }]
+  headerRow(wsCustomers, [
+    'Müşteri No',
+    'Müşteri Adı Soyadı',
+    ...PRODUCTS.map((p) => `Kalan ${p} Emanet (Ton)`),
+  ])
 
   const wsSum = wb.addWorksheet('Stok ve Kâr Özeti')
-  wsSum.columns = [
-    { width: 22 },
-    { width: 16 },
-    { width: 13 },
-    { width: 17 },
-    { width: 13 },
-    { width: 15 },
-    { width: 19 },
-    { width: 15 },
-  ]
-  headerRow(wsSum, ['Ürün', 'Toplam Alış (ton)', 'Emanet (ton)', 'Fiziksel Stok (ton)', 'Satılan (ton)', 'Toplam Ciro (TL)', 'Ort. Alış Fiyatı (₺/kg)', 'Kâr/Zarar (TL)'])
-  dashboard.forEach((d) => {
-    wsSum.addRow([
-      d.product_name,
-      d.total_purchased_quantity,
-      d.emanet_balance,
-      d.physical_stock,
-      d.sold_quantity,
-      d.sold_amount,
-      d.avg_buy_price,
-      d.profit_loss,
-    ])
-  })
-  styling(wsSum)
+  wsSum.views = [{ state: 'frozen', ySplit: 1 }]
+  wsSum.columns = [{ width: 25 }, { width: 35 }, { width: 35 }, { width: 35 }, { width: 26 }, { width: 35 }, { width: 35 }, { width: 24 }, { width: 27 }]
+  headerRow(wsSum, [
+    'Ürün',
+    'Satın Alınan Toplam (Ton)',
+    'Satın Alınmayan Emanet Toplam (Ton)',
+    'Satılan Toplam (Ton)',
+    'Güncel Depo Stoğu (Ton)',
+    'Ort. Alış Fiyatı (TL)',
+    'Ort. Satış Fiyatı (TL)',
+    'Toplam Kâr/Zarar (TL)',
+    'Ton Başına Ort. Kâr (TL)',
+  ])
 
-  const p = dashboard.length
-  const salesDataRows = sales.length
-  const summary = [
-    ['TOPLAM STOK (ton)', p ? { formula: `SUM(D2:D${p + 1})` } : { result: 0 }],
-    ['TOPLAM CİRO (TL)', salesDataRows ? { formula: `SUM('Satışlar'!F2:F${salesDataRows + 1})` } : { result: 0 }],
-    ['GENEL KÂR/ZARAR (TL)', p ? { formula: `SUM(H2:H${p + 1})` } : { result: 0 }],
-    [
-      'ORT. SATIŞ FİYATI (₺/kg)',
-      salesDataRows ? { formula: `AVERAGE('Satışlar'!E2:E${salesDataRows + 1})` } : { result: 0 },
-    ],
-  ]
-  summary.forEach(([label, value], i) => {
-    const r = p + 2 + i
-    const l = wsSum.getCell(`A${r}`)
-    l.value = label
-    l.font = TOTAL_FONT
-    l.fill = TOTAL_FILL
-    const v = wsSum.getCell(`B${r}`)
-    v.value = value
-    v.font = TOTAL_FONT
-    v.fill = TOTAL_FILL
+  const txMul = (r) => `IF(AND(ISNUMBER(E${r}), ISNUMBER(F${r})), E${r}*F${r}, 0)`
+  const txRunning = (r) =>
+    `IF(C${r}="","",IF(OR(C${r}="Emanet", C${r}="Emanetten Alış"), SUMIFS(E$2:E${r}, B$2:B${r}, B${r}, D$2:D${r}, D${r}, C$2:C${r}, "Emanet") - SUMIFS(E$2:E${r}, B$2:B${r}, B${r}, D$2:D${r}, D${r}, C$2:C${r}, "Emanetten Alış"), "-"))`
+
+  transactions.forEach((t, i) => {
+    const r = i + 2
+    wsTx.getCell(`A${r}`).value = fmtDate(t.date)
+    wsTx.getCell(`B${r}`).value = t.customer_name
+    wsTx.getCell(`C${r}`).value = t.type
+    wsTx.getCell(`D${r}`).value = t.product_name
+    wsTx.getCell(`E${r}`).value = t.quantity
+    wsTx.getCell(`E${r}`).numFmt = TON_FMT
+    wsTx.getCell(`F${r}`).value = t.price
+    wsTx.getCell(`F${r}`).numFmt = TL_FMT
+    wsTx.getCell(`G${r}`).value = { formula: txMul(r) }
+    wsTx.getCell(`G${r}`).numFmt = TL_FMT
+    wsTx.getCell(`H${r}`).value = { formula: txRunning(r) }
+    wsTx.getCell(`H${r}`).numFmt = TON_FMT
+  })
+  for (let r = transactions.length + 2; r <= MAX_ROW; r++) {
+    wsTx.getCell(`F${r}`).value = { formula: `IF(C${r}="Emanet", 0, "")` }
+    wsTx.getCell(`F${r}`).numFmt = TL_FMT
+    wsTx.getCell(`G${r}`).value = { formula: txMul(r) }
+    wsTx.getCell(`G${r}`).numFmt = TL_FMT
+    wsTx.getCell(`H${r}`).value = { formula: txRunning(r) }
+    wsTx.getCell(`H${r}`).numFmt = TON_FMT
+  }
+
+  sales.forEach((s, i) => {
+    const r = i + 2
+    wsSales.getCell(`A${r}`).value = fmtDate(s.date)
+    wsSales.getCell(`B${r}`).value = s.customer_name
+    wsSales.getCell(`C${r}`).value = s.product_name
+    wsSales.getCell(`D${r}`).value = s.quantity
+    wsSales.getCell(`D${r}`).numFmt = TON_FMT
+    wsSales.getCell(`E${r}`).value = s.price
+    wsSales.getCell(`E${r}`).numFmt = TL_FMT
+    wsSales.getCell(`F${r}`).value = { formula: `IF(AND(ISNUMBER(D${r}), ISNUMBER(E${r})), D${r}*E${r}, 0)` }
+    wsSales.getCell(`F${r}`).numFmt = TL_FMT
+  })
+  for (let r = sales.length + 2; r <= MAX_ROW; r++) {
+    wsSales.getCell(`F${r}`).value = { formula: `IF(AND(ISNUMBER(D${r}), ISNUMBER(E${r})), D${r}*E${r}, 0)` }
+    wsSales.getCell(`F${r}`).numFmt = TL_FMT
+  }
+
+  const custBal = (r, p) =>
+    `IF($B${r}="","", SUMIFS(İşlemler!E:E, İşlemler!B:B, $B${r}, İşlemler!D:D, "${p}", İşlemler!C:C, "Emanet") - SUMIFS(İşlemler!E:E, İşlemler!B:B, $B${r}, İşlemler!D:D, "${p}", İşlemler!C:C, "Emanetten Alış"))`
+  customers.forEach((c, i) => {
+    const r = i + 2
+    wsCustomers.getCell(`A${r}`).value = { formula: `IF(B${r}="","", "M-"&TEXT(ROW()-1,"000"))` }
+    wsCustomers.getCell(`B${r}`).value = c.name
+    PRODUCTS.forEach((p, pi) => {
+      wsCustomers.getCell(String.fromCharCode(67 + pi) + r).value = { formula: custBal(r, p) }
+      wsCustomers.getCell(String.fromCharCode(67 + pi) + r).numFmt = TON_FMT
+    })
+  })
+  for (let r = customers.length + 2; r <= MAX_ROW; r++) {
+    wsCustomers.getCell(`A${r}`).value = { formula: `IF(B${r}="","", "M-"&TEXT(ROW()-1,"000"))` }
+    PRODUCTS.forEach((p, pi) => {
+      wsCustomers.getCell(String.fromCharCode(67 + pi) + r).value = { formula: custBal(r, p) }
+      wsCustomers.getCell(String.fromCharCode(67 + pi) + r).numFmt = TON_FMT
+    })
+  }
+
+  PRODUCTS.forEach((p, i) => {
+    const r = i + 2
+    wsSum.getCell(`A${r}`).value = p
+    wsSum.getCell(`B${r}`).value = {
+      formula: `SUMIFS(İşlemler!E:E, İşlemler!D:D, A${r}, İşlemler!C:C, "Normal Alış") + SUMIFS(İşlemler!E:E, İşlemler!D:D, A${r}, İşlemler!C:C, "Emanetten Alış")`,
+    }
+    wsSum.getCell(`B${r}`).numFmt = TON_FMT
+    wsSum.getCell(`C${r}`).value = {
+      formula: `SUMIFS(İşlemler!E:E, İşlemler!D:D, A${r}, İşlemler!C:C, "Emanet") - SUMIFS(İşlemler!E:E, İşlemler!D:D, A${r}, İşlemler!C:C, "Emanetten Alış")`,
+    }
+    wsSum.getCell(`C${r}`).numFmt = TON_FMT
+    wsSum.getCell(`D${r}`).value = { formula: `SUMIF(Satışlar!C:C, A${r}, Satışlar!D:D)` }
+    wsSum.getCell(`D${r}`).numFmt = TON_FMT
+    wsSum.getCell(`E${r}`).value = { formula: `B${r}+C${r}-D${r}` }
+    wsSum.getCell(`E${r}`).numFmt = TON_FMT
+    wsSum.getCell(`F${r}`).value = {
+      formula: `IF((SUMIFS(İşlemler!E:E, İşlemler!D:D, A${r}, İşlemler!C:C, "Normal Alış") + SUMIFS(İşlemler!E:E, İşlemler!D:D, A${r}, İşlemler!C:C, "Emanetten Alış"))=0, 0, (SUMIFS(İşlemler!G:G, İşlemler!D:D, A${r}, İşlemler!C:C, "Normal Alış") + SUMIFS(İşlemler!G:G, İşlemler!D:D, A${r}, İşlemler!C:C, "Emanetten Alış"))/(SUMIFS(İşlemler!E:E, İşlemler!D:D, A${r}, İşlemler!C:C, "Normal Alış") + SUMIFS(İşlemler!E:E, İşlemler!D:D, A${r}, İşlemler!C:C, "Emanetten Alış")))`,
+    }
+    wsSum.getCell(`F${r}`).numFmt = TL_FMT
+    wsSum.getCell(`G${r}`).value = {
+      formula: `IF(SUMIF(Satışlar!C:C, A${r}, Satışlar!D:D)=0, 0, SUMIF(Satışlar!C:C, A${r}, Satışlar!F:F)/SUMIF(Satışlar!C:C, A${r}, Satışlar!D:D))`,
+    }
+    wsSum.getCell(`G${r}`).numFmt = TL_FMT
+    wsSum.getCell(`H${r}`).value = { formula: `(G${r}-F${r})*D${r}` }
+    wsSum.getCell(`H${r}`).numFmt = TL_FMT
+    wsSum.getCell(`I${r}`).value = { formula: `IF(D${r}=0, 0, G${r}-F${r})` }
+    wsSum.getCell(`I${r}`).numFmt = TL_FMT
   })
 
   return wb
