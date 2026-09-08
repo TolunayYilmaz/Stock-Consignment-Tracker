@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Loader2, Save, ShoppingCart, Trash2 } from 'lucide-react'
+import { Loader2, Save, Search, ShoppingCart, Trash2 } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import ProductBadge from '../components/ProductBadge'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -16,6 +16,8 @@ const emptyForm = {
   date: '',
 }
 
+const YEAR_OPTIONS = ['Tümü', '2026', '2025', '2024']
+
 export default function Sales() {
   const dispatch = useDispatch()
   const customers = useSelector((state) => state.customers.items)
@@ -26,6 +28,8 @@ export default function Sales() {
   const [deleteId, setDeleteId] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedYear, setSelectedYear] = useState('Tümü')
 
   useEffect(() => {
     dispatch(fetchCustomers())
@@ -48,9 +52,20 @@ export default function Sales() {
     }
   }
 
+  const filteredSales = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    return sales.filter((s) => {
+      const matchesName =
+        !q || (s.customer_name || '').toLowerCase().includes(q)
+      const matchesYear =
+        selectedYear === 'Tümü' || new Date(s.date).getFullYear() === parseInt(selectedYear, 10)
+      return matchesName && matchesYear
+    })
+  }, [sales, searchQuery, selectedYear])
+
   const totalRevenue = useMemo(
-    () => sales.reduce((s, sale) => s + sale.quantity * sale.price, 0),
-    [sales]
+    () => filteredSales.reduce((s, sale) => s + sale.quantity * sale.price, 0),
+    [filteredSales]
   )
 
   const handleDelete = async () => {
@@ -131,6 +146,35 @@ export default function Sales() {
         </span>
       </div>
 
+      <div className="card mb-4 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-xs">
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Alıcı adına göre ara..."
+            className="input-field pl-9"
+            aria-label="Alıcı ara"
+          />
+        </div>
+        <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
+          <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Yıl</span>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
+            aria-label="Yıl seçimi"
+          >
+            {YEAR_OPTIONS.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div className="card overflow-x-auto">
         {loading ? (
           <div className="flex items-center justify-center p-10">
@@ -150,7 +194,7 @@ export default function Sales() {
               </tr>
             </thead>
             <tbody>
-              {sales.map((s) => (
+              {filteredSales.map((s) => (
                 <tr key={s.id} className="border-b border-stone-50 hover:bg-farm-50/50">
                   <td className="td">{new Date(s.date).toLocaleDateString('tr-TR')}</td>
                   <td className="td font-semibold text-stone-800">{s.customer_name}</td>
@@ -181,6 +225,12 @@ export default function Sales() {
           </table>
         )}
         {!loading && sales.length === 0 && <p className="p-4 text-stone-500">Henüz satış eklenmemiş.</p>}
+        {!loading && sales.length > 0 && filteredSales.length === 0 && (
+          <div className="flex items-center justify-center gap-2 px-4 py-10 text-stone-500">
+            <Search size={18} />
+            <p className="text-sm">Bu kriterlere uygun satış bulunamadı.</p>
+          </div>
+        )}
       </div>
 
       <ConfirmDialog
