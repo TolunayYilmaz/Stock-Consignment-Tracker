@@ -65,8 +65,9 @@ def _build_html(to_email: str, link: str) -> str:
 
 
 def send_verification_email(to_email: str, token: str, base_url: str = "http://localhost:8000") -> bool:
-    """Resend üzerinden HTML doğrulama maili gönderir. Hata olursa sessizce False döner."""
+    """Resend üzerinden HTML doğrulama maili gönderir. Hata olursa loglayıp False döner."""
     if not RESEND_API_KEY:
+        print("[email] RESEND_API_KEY is not set; skipping send")
         return False
     import resend
 
@@ -82,5 +83,6 @@ def send_verification_email(to_email: str, token: str, base_url: str = "http://l
             }
         )
         return True
-    except Exception:
+    except Exception as e:
+        print(f"[email] FAILED to send to {to_email}: {type(e).__name__}: {e}")
         return False
