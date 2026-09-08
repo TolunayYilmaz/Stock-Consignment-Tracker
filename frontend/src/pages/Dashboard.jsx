@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { BarChart3, FileSpreadsheet, Loader2, Package, TrendingDown, TrendingUp, Warehouse } from 'lucide-react'
+import { BarChart3, Banknote, FileSpreadsheet, Loader2, Package, TrendingDown, TrendingUp, Warehouse } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import ProductBadge from '../components/ProductBadge'
+import StockDetailModal from '../components/StockDetailModal'
 import { fetchCustomers } from '../store/slices/customersSlice'
 import { fetchTransactions } from '../store/slices/transactionsSlice'
 import { fetchSales } from '../store/slices/salesSlice'
@@ -13,6 +14,83 @@ import { exportToExcel } from '../utils/exportExcel'
 const safeNum = (n) => (Number.isFinite(Number(n)) ? Number(n) : 0)
 const fmt = (n, max = 3) => safeNum(n).toLocaleString('tr-TR', { maximumFractionDigits: max })
 const fmtMoney = (n) => `${safeNum(n).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺`
+
+const PRODUCTS = ['Arpa', 'Buğday', 'Mısır', 'Yağlık Ayçekirdeği', 'Çerezlik Çekirdek']
+const TYPE_NORMAL = 'Normal Alış'
+const TYPE_EMANET = 'Emanet'
+const TYPE_EMANETTEN_ALIS = 'Emanetten Alış'
+
+const YEAR_OPTIONS = [
+  { value: 'all', label: 'Tümü' },
+  { value: 2026, label: '2026' },
+  { value: 2025, label: '2025' },
+  { value: 2024, label: '2024' },
+]
+
+function yearOf(d) {
+  return new Date(d).getFullYear()
+}
+
+// Backend services.get_dashboard ile birebir aynı formuller, sadece yıla göre filtreli.
+function computeYearRows(transactions, sales, year) {
+  const txns = year === 'all' ? transactions : transactions.filter((t) => yearOf(t.date) === year)
+  const sls = year === 'all' ? sales : sales.filter((s) => yearOf(s.date) === year)
+
+  const txnAgg = {}
+  for (const t of txns) {
+    const key = `${t.product_name}||${t.type}`
+    const qty = safeNum(t.quantity)
+    const amount = qty * safeNum(t.price)
+    const cur = txnAgg[key] || { qty: 0, amount: 0 }
+    cur.qty += qty
+    cur.amount += amount
+    txnAgg[key] = cur
+  }
+
+  const saleAgg = {}
+  for (const s of sls) {
+    const qty = safeNum(s.quantity)
+    const amount = qty * safeNum(s.price)
+    const cur = saleAgg[s.product_name] || { qty: 0, amount: 0 }
+    cur.qty += qty
+    cur.amount += amount
+    saleAgg[s.product_name] = cur
+  }
+
+  const get = (p, type) => txnAgg[`${p}||${type}`] || { qty: 0, amount: 0 }
+
+  return PRODUCTS.map((product) => {
+    const boughtN = get(product, TYPE_NORMAL)
+    const boughtE = get(product, TYPE_EMANETTEN_ALIS)
+    const bought_quantity = safeNum(boughtN.qty) + safeNum(boughtE.qty)
+    const bought_amount = safeNum(boughtN.amount) + safeNum(boughtE.amount)
+
+    const emanet_qty = safeNum(get(product, TYPE_EMANET).qty)
+    const emanet_balance = emanet_qty - safeNum(boughtE.qty)
+
+    const sold = saleAgg[product] || { qty: 0, amount: 0 }
+    const total_bought = bought_quantity + emanet_qty
+    const physical_stock = total_bought - safeNum(sold.qty)
+
+    const avg_buy = bought_quantity ? bought_amount / bought_quantity : 0
+    const avg_sell = safeNum(sold.qty) ? safeNum(sold.amount) / safeNum(sold.qty) : 0
+    const profit_loss = safeNum(sold.amount) - safeNum(sold.qty) * avg_buy
+
+    return {
+      product_name: product,
+      total_purchased_quantity: bought_quantity,
+      total_purchased_amount: bought_amount,
+      emanet_balance,
+      bought_emanet: safeNum(boughtE.qty),
+      physical_stock,
+      sold_quantity: safeNum(sold.qty),
+      sold_amount: safeNum(sold.amount),
+      avg_buy_price: avg_buy,
+      avg_sell_price: avg_sell,
+      profit_loss,
+    }
+  })
+}
 
 function BarChart({ data }) {
   const max = useMemo(() => Math.max(...data.map((d) => Math.abs(safeNum(d.value))), 1), [data])
@@ -50,12 +128,20 @@ function BarChart({ data }) {
 
 export default function Dashboard() {
   const dispatch = useDispatch()
-  const { rows, loading, error } = useSelector((state) => state.dashboard)
+  const dashboard = useSelector((state) => state.dashboard)
+  const transactions = useSelector((state) => state.transactions.items)
+  const sales = useSelector((state) => state.sales.items)
+  const transactionsLoading = useSelector((state) => state.transactions.loading)
+  const salesLoading = useSelector((state) => state.sales.loading)
+  const [selectedYear, setSelectedYear] = useState('all')
+  const [stockModalOpen, setStockModalOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState('')
 
   useEffect(() => {
     dispatch(fetchDashboard())
+    dispatch(fetchTransactions())
+    dispatch(fetchSales())
   }, [dispatch])
 
   const handleExport = async () => {
@@ -82,11 +168,17 @@ export default function Dashboard() {
     }
   }
 
-  // Yalnızca ham veri değiştiğinde yeniden hesaplanır (her render'da değil)
-  const { totalProfit, totalStock, totalEmanet, stats, chartData } = useMemo(() => {
-    const totalProfit = rows.reduce((sum, r) => sum + safeNum(r.profit_loss), 0)
-    const totalStock = rows.reduce((sum, r) => sum + safeNum(r.physical_stock), 0)
-    const totalEmanet = rows.reduce((sum, r) => sum + safeNum(r.emanet_balance), 0)
+  // Hesaplamalar seçili yıla bağlı: "Tümü" seçilince tüm veriler üzerinden çalışır.
+  const yearRows = useMemo(
+    () => computeYearRows(transactions, sales, selectedYear),
+    [transactions, sales, selectedYear]
+  )
+
+  const { totalProfit, totalStock, totalEmanet, totalCiro, stats, chartData } = useMemo(() => {
+    const totalProfit = yearRows.reduce((sum, r) => sum + safeNum(r.profit_loss), 0)
+    const totalStock = yearRows.reduce((sum, r) => sum + safeNum(r.physical_stock), 0)
+    const totalEmanet = yearRows.reduce((sum, r) => sum + safeNum(r.emanet_balance), 0)
+    const totalCiro = yearRows.reduce((sum, r) => sum + safeNum(r.sold_amount), 0)
 
     const stats = [
       {
@@ -102,6 +194,7 @@ export default function Dashboard() {
         sub: 'Depoda kalan ürün',
         icon: Warehouse,
         cls: 'bg-amber-100 text-amber-700',
+        clickable: true,
       },
       {
         label: 'Müşteri Emaneti',
@@ -110,12 +203,24 @@ export default function Dashboard() {
         icon: Package,
         cls: 'bg-farm-100 text-green-700',
       },
+      {
+        label: 'Toplam Ciro',
+        value: fmtMoney(totalCiro),
+        sub: 'Satışlardan elde edilen gelir',
+        icon: Banknote,
+        cls: 'bg-sky-100 text-sky-700',
+      },
     ]
 
-    const chartData = rows.map((r) => ({ label: r.product_name, value: safeNum(r.profit_loss) }))
+    const chartData = yearRows.map((r) => ({ label: r.product_name, value: safeNum(r.profit_loss) }))
 
-    return { totalProfit, totalStock, totalEmanet, stats, chartData }
-  }, [rows])
+    return { totalProfit, totalStock, totalEmanet, totalCiro, stats, chartData }
+  }, [yearRows])
+
+  const loading = dashboard.loading || transactionsLoading || salesLoading
+  const error = dashboard.error
+
+  const yearLabel = YEAR_OPTIONS.find((o) => o.value === selectedYear)?.label || 'Tümü'
 
   return (
     <div>
@@ -124,15 +229,32 @@ export default function Dashboard() {
         title="Kâr / Zarar Özeti"
         subtitle="Ürün bazlı anlık stok ve finansal durum"
         right={
-          <button
-            onClick={handleExport}
-            disabled={exporting}
-            className="flex items-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-green-800 disabled:opacity-60"
-            title="Tüm verileri formüllerle Excel'e aktar"
-          >
-            {exporting ? <Loader2 className="animate-spin" size={16} /> : <FileSpreadsheet size={16} />}
-            Excel Olarak İndir
-          </button>
+          <>
+            <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
+              <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Yıl</span>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
+                aria-label="Yıl seçimi"
+              >
+                {YEAR_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              className="flex items-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-green-800 disabled:opacity-60"
+              title="Tüm verileri formüllerle Excel'e aktar"
+            >
+              {exporting ? <Loader2 className="animate-spin" size={16} /> : <FileSpreadsheet size={16} />}
+              Excel Olarak İndir
+            </button>
+          </>
         }
       />
 
@@ -142,9 +264,13 @@ export default function Dashboard() {
         <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
       )}
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className="card p-5">
+          <div
+            key={s.label}
+            onClick={s.clickable ? () => setStockModalOpen(true) : undefined}
+            className={`card p-5 ${s.clickable ? 'cursor-pointer transition hover:shadow-md' : ''}`}
+          >
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-stone-500">{s.label}</p>
@@ -188,7 +314,7 @@ export default function Dashboard() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
+            {yearRows.map((r) => (
               <tr key={r.product_name} className="border-b border-stone-50 hover:bg-farm-50/50">
                 <td className="td">
                   <ProductBadge product={r.product_name} />
@@ -207,8 +333,16 @@ export default function Dashboard() {
             ))}
           </tbody>
         </table>
-        {!loading && rows.length === 0 && <p className="p-4 text-stone-500">Henüz kayıt yok.</p>}
+        {!loading && yearRows.length === 0 && <p className="p-4 text-stone-500">Henüz kayıt yok.</p>}
       </div>
+
+      {stockModalOpen && (
+        <StockDetailModal
+          rows={yearRows}
+          yearLabel={`Seçili Yıl: ${yearLabel}`}
+          onClose={() => setStockModalOpen(false)}
+        />
+      )}
     </div>
   )
 }
