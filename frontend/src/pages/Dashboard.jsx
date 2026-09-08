@@ -10,28 +10,40 @@ import { fetchDashboard } from '../store/slices/dashboardSlice'
 import { store } from '../store/store'
 import { exportToExcel } from '../utils/exportExcel'
 
-const fmt = (n, max = 3) => n.toLocaleString('tr-TR', { maximumFractionDigits: max })
-const fmtMoney = (n) => `${n.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺`
+const safeNum = (n) => (Number.isFinite(Number(n)) ? Number(n) : 0)
+const fmt = (n, max = 3) => safeNum(n).toLocaleString('tr-TR', { maximumFractionDigits: max })
+const fmtMoney = (n) => `${safeNum(n).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺`
 
 function BarChart({ data }) {
-  const max = useMemo(() => Math.max(...data.map((d) => Math.abs(d.value)), 1), [data])
+  const max = useMemo(() => Math.max(...data.map((d) => Math.abs(safeNum(d.value))), 1), [data])
+  const hasValue = data.some((d) => safeNum(d.value) !== 0)
+  if (!hasValue) {
+    return (
+      <div className="flex h-80 w-full items-center justify-center text-sm text-stone-400">
+        Satış bulunmadığı için kâr/zarar 0 ₺ — satış girildiğinde barlar çizilir.
+      </div>
+    )
+  }
   return (
-    <div className="flex h-56 items-end gap-3 px-2">
-      {data.map((d) => (
-        <div key={d.label} className="flex flex-1 flex-col items-center">
-          <div className="flex w-full flex-1 items-end justify-center">
-            <div
-              className="w-full max-w-12 rounded-t-xl transition"
-              style={{
-                height: `${Math.max((Math.abs(d.value) / max) * 100, 2)}%`,
-                backgroundColor: d.value >= 0 ? '#47762a' : '#dc2626',
-              }}
-              title={`${d.label}: ${fmtMoney(d.value)}`}
-            />
+    <div className="flex h-80 w-full items-end gap-3 px-2">
+      {data.map((d) => {
+        const v = safeNum(d.value)
+        return (
+          <div key={d.label} className="flex h-full flex-1 flex-col items-center">
+            <div className="flex w-full flex-1 items-end justify-center">
+              <div
+                className="w-full max-w-12 rounded-t-xl transition"
+                style={{
+                  height: `${Math.max((Math.abs(v) / max) * 100, v === 0 ? 0 : 2)}%`,
+                  backgroundColor: v >= 0 ? '#47762a' : '#dc2626',
+                }}
+                title={`${d.label}: ${fmtMoney(v)}`}
+              />
+            </div>
+            <span className="mt-1.5 text-center text-xs font-medium text-stone-500">{d.label}</span>
           </div>
-          <span className="mt-1.5 text-center text-xs font-medium text-stone-500">{d.label}</span>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -72,9 +84,9 @@ export default function Dashboard() {
 
   // Yalnızca ham veri değiştiğinde yeniden hesaplanır (her render'da değil)
   const { totalProfit, totalStock, totalEmanet, stats, chartData } = useMemo(() => {
-    const totalProfit = rows.reduce((sum, r) => sum + r.profit_loss, 0)
-    const totalStock = rows.reduce((sum, r) => sum + r.physical_stock, 0)
-    const totalEmanet = rows.reduce((sum, r) => sum + r.emanet_balance, 0)
+    const totalProfit = rows.reduce((sum, r) => sum + safeNum(r.profit_loss), 0)
+    const totalStock = rows.reduce((sum, r) => sum + safeNum(r.physical_stock), 0)
+    const totalEmanet = rows.reduce((sum, r) => sum + safeNum(r.emanet_balance), 0)
 
     const stats = [
       {
@@ -100,7 +112,7 @@ export default function Dashboard() {
       },
     ]
 
-    const chartData = rows.map((r) => ({ label: r.product_name, value: r.profit_loss }))
+    const chartData = rows.map((r) => ({ label: r.product_name, value: safeNum(r.profit_loss) }))
 
     return { totalProfit, totalStock, totalEmanet, stats, chartData }
   }, [rows])
@@ -152,7 +164,7 @@ export default function Dashboard() {
       <div className="card mb-6 p-4">
         <h2 className="mb-3 text-lg font-semibold text-stone-800">Ürün Bazlı Kâr/Zarar (₺)</h2>
         {loading ? (
-          <div className="flex h-56 items-center justify-center">
+          <div className="flex h-80 w-full items-center justify-center">
             <Loader2 className="animate-spin text-green-700" />
           </div>
         ) : (

@@ -119,11 +119,12 @@ def get_dashboard(db: Session, user_id: int):
         physical_stock = total_bought - sold_quantity
 
         # Ortalama alış fiyatı (SADECE satın alınanlar: normal + emanetten alış)
-        avg_buy_price = bought_amount / bought_quantity if bought_quantity else 0.0
-        avg_sell_price = sold_amount / sold_quantity if sold_quantity else 0.0
+        avg_buy = bought_amount / bought_quantity if bought_quantity else 0.0
+        avg_sell = sold_amount / sold_quantity if sold_quantity else 0.0
 
-        # Kâr/zarar = (ort satış - ort alış) * satılan toplam
-        profit_loss = (avg_sell_price - avg_buy_price) * sold_quantity
+        # Kâr/zarar = Satış Geliri - (Satılan Miktar * Ortalama Alış Maliyeti)
+        # (ort satış - ort alış) * satılan ile matematiksel olarak aynıdır
+        profit_loss = sold_amount - sold_quantity * avg_buy
 
         rows.append(
             {
@@ -135,8 +136,8 @@ def get_dashboard(db: Session, user_id: int):
                 "physical_stock": round(physical_stock, 3),
                 "sold_quantity": round(sold_quantity, 3),
                 "sold_amount": round(sold_amount, 2),
-                "avg_buy_price": round(avg_buy_price, 2),
-                "avg_sell_price": round(avg_sell_price, 2),
+                "avg_buy_price": round(avg_buy, 2),
+                "avg_sell_price": round(avg_sell, 2),
                 "profit_loss": round(profit_loss, 2),
             }
         )
