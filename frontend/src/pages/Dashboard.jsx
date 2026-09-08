@@ -1,9 +1,14 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { BarChart3, Loader2, Package, TrendingDown, TrendingUp, Warehouse } from 'lucide-react'
+import { BarChart3, FileSpreadsheet, Loader2, Package, TrendingDown, TrendingUp, Warehouse } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import ProductBadge from '../components/ProductBadge'
+import { fetchCustomers } from '../store/slices/customersSlice'
+import { fetchTransactions } from '../store/slices/transactionsSlice'
+import { fetchSales } from '../store/slices/salesSlice'
 import { fetchDashboard } from '../store/slices/dashboardSlice'
+import { store } from '../store/store'
+import { exportToExcel } from '../utils/exportExcel'
 
 const fmt = (n, max = 3) => n.toLocaleString('tr-TR', { maximumFractionDigits: max })
 const fmtMoney = (n) => `${n.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺`
@@ -34,10 +39,36 @@ function BarChart({ data }) {
 export default function Dashboard() {
   const dispatch = useDispatch()
   const { rows, loading, error } = useSelector((state) => state.dashboard)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState('')
 
   useEffect(() => {
     dispatch(fetchDashboard())
   }, [dispatch])
+
+  const handleExport = async () => {
+    setExporting(true)
+    setExportError('')
+    try {
+      await Promise.all([
+        dispatch(fetchCustomers({ force: true, silent: true })),
+        dispatch(fetchTransactions({ force: true, silent: true })),
+        dispatch(fetchSales({ force: true, silent: true })),
+        dispatch(fetchDashboard({ force: true, silent: true })),
+      ]).catch(() => {})
+      const st = store.getState()
+      await exportToExcel({
+        customers: st.customers.items,
+        transactions: st.transactions.items,
+        sales: st.sales.items,
+        dashboard: st.dashboard.rows,
+      })
+    } catch (err) {
+      setExportError('Excel dosyası oluşturulamadı')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   // Yalnızca ham veri değiştiğinde yeniden hesaplanır (her render'da değil)
   const { totalProfit, totalStock, totalEmanet, stats, chartData } = useMemo(() => {
@@ -76,7 +107,24 @@ export default function Dashboard() {
 
   return (
     <div>
-      <PageHeader icon={BarChart3} title="Kâr / Zarar Özeti" subtitle="Ürün bazlı anlık stok ve finansal durum" />
+      <PageHeader
+        icon={BarChart3}
+        title="Kâr / Zarar Özeti"
+        subtitle="Ürün bazlı anlık stok ve finansal durum"
+        right={
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="flex items-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-green-800 disabled:opacity-60"
+            title="Tüm verileri formüllerle Excel'e aktar"
+          >
+            {exporting ? <Loader2 className="animate-spin" size={16} /> : <FileSpreadsheet size={16} />}
+            Excel Olarak İndir
+          </button>
+        }
+      />
+
+      {exportError && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{exportError}</p>}
 
       {error && (
         <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
