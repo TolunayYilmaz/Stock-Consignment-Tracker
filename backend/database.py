@@ -21,6 +21,23 @@ def ensure_schema():
         conn.execute(
             text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE")
         )
+        # E-posta doğrulama + yönetici onayı
+        conn.execute(
+            text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE")
+        )
+        conn.execute(
+            text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_approved BOOLEAN NOT NULL DEFAULT FALSE")
+        )
+        conn.execute(
+            text("ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR")
+        )
+        # Sistem hesabı dışarıda kilitli kalmasın (çok-tenant güvenlik baypası)
+        conn.execute(
+            text(
+                "UPDATE users SET is_verified = TRUE, is_approved = TRUE "
+                "WHERE email IN ('tolunay894@gmail.com', 'mock@test.com')"
+            )
+        )
         # Multi-tenant: her satırın sahibi (User)
         conn.execute(
             text("ALTER TABLE customers ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id)")

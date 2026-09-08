@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import { Eye, Loader2, ShieldCheck, Trash2, ShieldOff } from 'lucide-react'
+import { BadgeCheck, CheckCircle2, Clock, Eye, Loader2, ShieldCheck, Trash2, ShieldOff } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import UserDetailModal from '../components/UserDetailModal'
 import api from '../api/client'
@@ -28,6 +28,16 @@ export default function Admin() {
       .finally(() => setLoading(false))
   }, [user, navigate])
 
+  const onApprove = async (target) => {
+    setError('')
+    try {
+      await api.patch(`/admin/users/${target.id}/approve`)
+      setUsers((prev) => prev.map((u) => (u.id === target.id ? { ...u, is_approved: true } : u)))
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Onaylama başarısız')
+    }
+  }
+
   const onDelete = async (target) => {
     if (!window.confirm(`${target.email} kullanıcısını silmek istediğinize emin misiniz?`)) return
     setError('')
@@ -51,12 +61,13 @@ export default function Admin() {
             <Loader2 className="animate-spin text-green-700" />
           </div>
         ) : (
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="w-full min-w-[920px] text-sm">
             <thead>
               <tr className="border-b border-stone-100 bg-stone-50">
                 <th className="th">E-posta</th>
                 <th className="th">Kayıt Tarihi</th>
                 <th className="th">Yetki</th>
+                <th className="th">Durum</th>
                 <th className="th">İşlem</th>
               </tr>
             </thead>
@@ -76,7 +87,37 @@ export default function Admin() {
                     </span>
                   </td>
                   <td className="td">
+                    <div className="flex flex-col items-start gap-1.5">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          u.is_verified ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                        }`}
+                      >
+                        <BadgeCheck size={12} />
+                        {u.is_verified ? 'Doğrulandı' : 'Doğrulanmadı'}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          u.is_approved ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                        }`}
+                      >
+                        {u.is_approved ? <CheckCircle2 size={12} /> : <Clock size={12} />}
+                        {u.is_approved ? 'Onaylı' : 'Onay Bekliyor'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="td">
                     <div className="flex items-center gap-2">
+                      {!u.is_approved && u.id !== user.id && (
+                        <button
+                          onClick={() => onApprove(u)}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-green-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-green-700"
+                          title="Kullanıcıyı onayla"
+                        >
+                          <CheckCircle2 size={14} />
+                          Onayla
+                        </button>
+                      )}
                       <button
                         onClick={() => setDetailUser(u)}
                         className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-50"

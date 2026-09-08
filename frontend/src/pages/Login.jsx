@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
-import { Loader2, LogIn, Tractor } from 'lucide-react'
+import { AlertCircle, Loader2, LogIn, Tractor } from 'lucide-react'
 import { login } from '../store/slices/authSlice'
 
 export default function Login() {
@@ -41,7 +41,12 @@ export default function Login() {
 
         <div className="card p-6 sm:p-8">
           <h1 className="mb-6 text-center text-2xl font-bold text-stone-800">Giriş Yap</h1>
-          {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+          {error && (
+            <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <AlertCircle size={18} className="mt-0.5 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
               <label className="label">E-posta</label>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { CheckSquare, FileText, Loader2, Tractor, UserPlus, X } from 'lucide-react'
+import { AlertCircle, CheckCircle2, CheckSquare, FileText, Loader2, LogIn, Tractor, UserPlus, X } from 'lucide-react'
 import api from '../api/client'
 
 export default function Register() {
@@ -10,6 +10,7 @@ export default function Register() {
   const [kvkk, setKvkk] = useState(false)
   const [kvkkOpen, setKvkkOpen] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   const onSubmit = async (e) => {
@@ -19,10 +20,17 @@ export default function Register() {
       return
     }
     setError('')
+    setSuccess('')
     setSubmitting(true)
     try {
-      await api.post('/register', { email: email.trim(), password })
-      navigate('/login')
+      const res = await api.post('/register', { email: email.trim(), password })
+      if (res.data.is_verified && res.data.is_approved) {
+        navigate('/login')
+      } else {
+        setSuccess(
+          'Hesabınız oluşturuldu. Lütfen e-posta adresinize gönderdiğimiz doğrulama linkine tıklayarak hesabınızı doğrulayın.'
+        )
+      }
     } catch (err) {
       setError(err.response?.data?.detail || 'Kayıt başarısız')
     } finally {
@@ -45,8 +53,27 @@ export default function Register() {
 
         <div className="card p-6 sm:p-8">
           <h1 className="mb-6 text-center text-2xl font-bold text-stone-800">Kayıt Ol</h1>
-          {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-          <form onSubmit={onSubmit} className="space-y-4">
+          {error && (
+            <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <AlertCircle size={18} className="mt-0.5 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {success ? (
+            <div className="space-y-4">
+              <div className="flex items-start gap-2.5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
+                <span>{success}</span>
+              </div>
+              <button type="button" onClick={() => navigate('/login')} className="btn-primary w-full">
+                <LogIn size={16} />
+                Giriş Yap
+              </button>
+            </div>
+          ) : (
+            <div>
+              <form onSubmit={onSubmit} className="space-y-4">
             <div>
               <label className="label">E-posta</label>
               <input
@@ -94,12 +121,14 @@ export default function Register() {
               Kayıt Ol
             </button>
           </form>
-          <p className="mt-5 text-center text-sm text-stone-500">
-            Zaten hesabın var mı?{' '}
-            <Link to="/login" className="font-semibold text-green-700 hover:underline">
-              Giriş Yap
-            </Link>
-          </p>
+              <p className="mt-5 text-center text-sm text-stone-500">
+                Zaten hesabın var mı?{' '}
+                <Link to="/login" className="font-semibold text-green-700 hover:underline">
+                  Giriş Yap
+                </Link>
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

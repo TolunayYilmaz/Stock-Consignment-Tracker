@@ -17,6 +17,8 @@ class UserOut(BaseModel):
     id: int
     email: EmailStr
     is_admin: bool = False
+    is_verified: bool = False
+    is_approved: bool = False
     created_at: datetime
 
     class Config:

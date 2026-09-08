@@ -1,14 +1,16 @@
 import os
+import secrets
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from contextlib import asynccontextmanager
 from datetime import datetime
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
+import email_service
 import models
 import schemas
 import services
@@ -20,6 +22,9 @@ from auth import (
     verify_password,
 )
 from database import Base, engine, ensure_schema, get_db
+
+# Sistem hesapları: doğrulama ve onay adımlarını otomatik geçer (kilitlenme riski yok)
+VERIFIED_WHITELIST = {"tolunay894@gmail.com", "mock@test.com"}
 
 
 @asynccontextmanager
@@ -54,18 +59,28 @@ def _txn_out(t: models.Transaction) -> schemas.TransactionOut:
 
 # ---------- AUTH ----------
 @app.post("/api/register", response_model=schemas.UserOut)
-def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+def register(user: schemas.UserCreate, request: Request, db: Session = Depends(get_db)):
     existing = db.query(models.User).filter(models.User.email == user.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Bu email zaten kayıtlı")
+    auto_unlocked = user.email.lower() in VERIFIED_WHITELIST
     db_user = models.User(
         email=user.email,
         hashed_password=hash_password(user.password),
         is_admin=False,
+        is_verified=auto_unlocked,
+        is_approved=auto_unlocked,
+        verification_token=None if auto_unlocked else secrets.token_urlsafe(32),
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    if not auto_unlocked:
+        email_service.send_verification_email(
+            db_user.email,
+            db_user.verification_token,
+            str(request.base_url),
+        )
     return db_user
 
 
@@ -74,8 +89,30 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if not db_user or not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Email veya şifre hatalı")
+    if not db_user.is_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="Lütfen e-postanızı doğrulayın. E-posta adresinize gönderdiğimiz doğrulama linkine tıklayın.",
+        )
+    if not db_user.is_approved:
+        raise HTTPException(
+            status_code=403,
+            detail="Hesabınız yönetici onayı bekliyor. Onaylandıktan sonra giriş yapabilirsiniz.",
+        )
     token = create_access_token({"sub": str(db_user.id)})
     return schemas.Token(access_token=token)
+
+
+@app.get("/api/verify-email", response_model=schemas.UserOut)
+def verify_email(token: str, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.verification_token == token).first()
+    if not db_user:
+        raise HTTPException(status_code=400, detail="Geçersiz veya kullanılmış doğrulama linki")
+    db_user.is_verified = True
+    db_user.verification_token = None
+    db.commit()
+    db.refresh(db_user)
+    return db_user
 
 
 @app.get("/api/me", response_model=schemas.UserOut)
@@ -90,6 +127,21 @@ def admin_list_users(
     _: models.User = Depends(get_current_admin),
 ):
     return db.query(models.User).order_by(models.User.created_at.desc()).all()
+
+
+@app.patch("/api/admin/users/{user_id}/approve", response_model=schemas.UserOut)
+def admin_approve_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_admin: models.User = Depends(get_current_admin),
+):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+    user.is_approved = True
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 @app.delete("/api/admin/users/{user_id}", response_model=schemas.UserOut)
