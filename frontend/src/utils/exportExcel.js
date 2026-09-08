@@ -4,11 +4,25 @@ const saveAs = FileSaver.saveAs ?? FileSaver.default?.saveAs
 
 const PRODUCTS = ['Arpa', 'Buğday', 'Mısır', 'Yağlık Ayçekirdeği', 'Çerezlik Çekirdek']
 const MAX_ROW = 500
+const PRODUCT_LIST = `"${PRODUCTS.join(',')}"`
+const TYPE_LIST = '"Normal Alış,Emanet,Emanetten Alış"'
+const CUSTOMER_LIST = `='Müşteri Listesi'!$B$2:$B$${MAX_ROW}`
 
 const HEADER_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2F75B5' } }
 const HEADER_FONT = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 }
 const TON_FMT = '#,##0.00'
 const TL_FMT = '#,##0.00 "TL"'
+
+function addListValidation(ws, col, listFormula, allowBlank = true) {
+  ws.dataValidations.add(`${col}2:${col}${MAX_ROW}`, {
+    type: 'list',
+    allowBlank,
+    showErrorMessage: true,
+    errorTitle: 'Geçersiz değer',
+    error: 'Lütfen açılır listeden bir değer seçin.',
+    formulae: [listFormula],
+  })
+}
 
 function fmtDate(d) {
   const dt = new Date(d)
@@ -37,11 +51,16 @@ export function buildWorkbook({ customers = [], transactions = [], sales = [] },
   wsTx.views = [{ state: 'frozen', ySplit: 1 }]
   wsTx.columns = [{ width: 13 }, { width: 25 }, { width: 14 }, { width: 7 }, { width: 15 }, { width: 28 }, { width: 35 }, { width: 35 }]
   headerRow(wsTx, ['Tarih', 'Müşteri', 'İşlem Türü', 'Ürün', 'Miktar (Ton)', 'Fiyat (TL)', 'Toplam Tutar (TL)', 'Güncel Kalan Emanet (Ton)'])
+  addListValidation(wsTx, 'B', CUSTOMER_LIST)
+  addListValidation(wsTx, 'C', TYPE_LIST)
+  addListValidation(wsTx, 'D', PRODUCT_LIST)
 
   const wsSales = wb.addWorksheet('Satışlar')
   wsSales.views = [{ state: 'frozen', ySplit: 1 }]
   wsSales.columns = [{ width: 13 }, { width: 25 }, { width: 9 }, { width: 15 }, { width: 20 }, { width: 35 }]
   headerRow(wsSales, ['Tarih', 'Müşteri (Satılan Kişi)', 'Ürün', 'Miktar (Ton)', 'Satış Fiyatı (TL)', 'Toplam Tutar (TL)'])
+  addListValidation(wsSales, 'B', CUSTOMER_LIST)
+  addListValidation(wsSales, 'C', PRODUCT_LIST)
 
   const wsCustomers = wb.addWorksheet('Müşteri Listesi')
   wsCustomers.views = [{ state: 'frozen', ySplit: 1 }]
@@ -51,6 +70,14 @@ export function buildWorkbook({ customers = [], transactions = [], sales = [] },
     'Müşteri Adı Soyadı',
     ...PRODUCTS.map((p) => `Kalan ${p} Emanet (Ton)`),
   ])
+  wsCustomers.dataValidations.add(`B2:B${MAX_ROW}`, {
+    type: 'custom',
+    allowBlank: false,
+    showErrorMessage: true,
+    errorTitle: 'Yinelenen müşteri',
+    error: 'Aynı müşteri adı birden fazla kez kullanılamaz.',
+    formulae: ['COUNTIF($B$2:$B$500, B2)<=1'],
+  })
 
   const wsSum = wb.addWorksheet('Stok ve Kâr Özeti')
   wsSum.views = [{ state: 'frozen', ySplit: 1 }]
