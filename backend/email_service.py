@@ -5,7 +5,7 @@ import os
 load_dotenv()
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-FROM_EMAIL = "onboarding@resend.dev"
+FROM_EMAIL = '"Stok Emanet Takip" <info@stoktakip.cloud-ip.cc>'
 
 
 def _build_html(to_email: str, link: str) -> str:
