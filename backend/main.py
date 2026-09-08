@@ -121,14 +121,17 @@ def list_customers(db: Session = Depends(get_db), current_user: models.User = De
         .order_by(models.Customer.name)
         .all()
     )
+    # Tek sorguda tüm bakiyeler (N+1 yok)
+    balances = services.all_emanet_balances(db, current_user.id)
     result = []
     for c in customers:
+        c_bal = balances.get(c.id, {})
         result.append(
             schemas.CustomerBalance(
                 id=c.id,
                 name=c.name,
                 created_at=c.created_at,
-                balances=services.customer_emanet_balances(db, c.id, current_user.id),
+                balances={p: c_bal.get(p, 0.0) for p in services.PRODUCTS},
             )
         )
     return result

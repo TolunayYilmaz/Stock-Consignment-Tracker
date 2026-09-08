@@ -1,4 +1,6 @@
-from sqlalchemy import func
+from collections import defaultdict
+
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 import models
@@ -30,126 +32,109 @@ def create_transaction(db: Session, data, user_id: int) -> models.Transaction:
     return txn
 
 
-def customer_emanet_balances(db: Session, customer_id: int, user_id: int) -> dict:
-    """Müşterinin her üründeki kalan emaneti: Emanet - Emanetten Alış (yalnızca kendi tenant'ı)."""
-    result = {}
-    for product in PRODUCTS:
-        emanet = (
-            db.query(func.coalesce(func.sum(models.Transaction.quantity), 0.0))
-            .filter(
-                models.Transaction.user_id == user_id,
-                models.Transaction.customer_id == customer_id,
-                models.Transaction.product_name == product,
-                models.Transaction.type == TYPE_EMANET,
-            )
-            .scalar()
+def all_emanet_balances(db: Session, user_id: int) -> dict:
+    """Tek GROUP BY sorgusuyla tüm müşterilerin ürün bazlı emanet bakiyeleri.
+
+    Dönen yapı: {customer_id: {product_name: kalan_emanet}}
+    Emanet - Emanetten Alış.
+    """
+    rows = db.execute(
+        select(
+            models.Transaction.customer_id,
+            models.Transaction.product_name,
+            models.Transaction.type,
+            func.sum(models.Transaction.quantity),
         )
-        emanetten_alis = (
-            db.query(func.coalesce(func.sum(models.Transaction.quantity), 0.0))
-            .filter(
-                models.Transaction.user_id == user_id,
-                models.Transaction.customer_id == customer_id,
-                models.Transaction.product_name == product,
-                models.Transaction.type == TYPE_EMANETTEN_ALIS,
-            )
-            .scalar()
+        .where(
+            models.Transaction.user_id == user_id,
+            models.Transaction.type.in_([TYPE_EMANET, TYPE_EMANETTEN_ALIS]),
         )
-        result[product] = (emanet or 0.0) - (emanetten_alis or 0.0)
-    return result
+        .group_by(
+            models.Transaction.customer_id,
+            models.Transaction.product_name,
+            models.Transaction.type,
+        )
+    ).all()
+
+    balances = defaultdict(lambda: defaultdict(float))
+    for customer_id, product, txn_type, qty in rows:
+        qty = qty or 0.0
+        if txn_type == TYPE_EMANET:
+            balances[customer_id][product] += qty
+        else:
+            balances[customer_id][product] -= qty
+    return balances
 
 
 def get_dashboard(db: Session, user_id: int):
-    """Ürün bazlı özet ve kâr/zarar hesaplama (yalnızca kullanıcının kendi verileri)."""
-    rows = []
+    """Ürün bazlı özet ve kâr/zarar hesaplama (tek tek sorgular yerine toplu gruplama)."""
+    # 1) Tüm işlemler tek sorguda ürün + tip bazında gruplanır
+    txn_rows = db.execute(
+        select(
+            models.Transaction.product_name,
+            models.Transaction.type,
+            func.sum(models.Transaction.quantity),
+            func.sum(models.Transaction.quantity * models.Transaction.price),
+        )
+        .where(models.Transaction.user_id == user_id)
+        .group_by(models.Transaction.product_name, models.Transaction.type)
+    ).all()
 
+    # (product, type) -> (qty, amount)
+    txn_agg = {}
+    for product, txn_type, qty, amount in txn_rows:
+        txn_agg[(product, txn_type)] = (qty or 0.0, amount or 0.0)
+
+    # 2) Tüm satışlar tek sorguda ürün bazında gruplanır
+    sale_rows = db.execute(
+        select(
+            models.Sale.product_name,
+            func.sum(models.Sale.quantity),
+            func.sum(models.Sale.quantity * models.Sale.price),
+        )
+        .where(models.Sale.user_id == user_id)
+        .group_by(models.Sale.product_name)
+    ).all()
+
+    sale_agg = {product: (qty or 0.0, amount or 0.0) for product, qty, amount in sale_rows}
+
+    get = lambda product, txn_type: txn_agg.get((product, txn_type), (0.0, 0.0))
+
+    rows = []
     for product in PRODUCTS:
         # Normal Alış + Emanetten Alış (satın alınan)
-        bought_quantity = (
-            db.query(func.coalesce(func.sum(models.Transaction.quantity), 0.0))
-            .filter(
-                models.Transaction.user_id == user_id,
-                models.Transaction.product_name == product,
-                models.Transaction.type.in_([TYPE_NORMAL, TYPE_EMANETTEN_ALIS]),
-            )
-            .scalar()
-        )
-        bought_amount = (
-            db.query(func.coalesce(func.sum(models.Transaction.quantity * models.Transaction.price), 0.0))
-            .filter(
-                models.Transaction.user_id == user_id,
-                models.Transaction.product_name == product,
-                models.Transaction.type.in_([TYPE_NORMAL, TYPE_EMANETTEN_ALIS]),
-            )
-            .scalar()
-        )
+        bought_qty_n, bought_amt_n = get(product, TYPE_NORMAL)
+        bought_qty_e, bought_amt_e = get(product, TYPE_EMANETTEN_ALIS)
+        bought_quantity = bought_qty_n + bought_qty_e
+        bought_amount = bought_amt_n + bought_amt_e
 
-        # Emanet - Emanetten Alış (satın alınmayan emanet = emanet balansı)
-        emanet_qty = (
-            db.query(func.coalesce(func.sum(models.Transaction.quantity), 0.0))
-            .filter(
-                models.Transaction.user_id == user_id,
-                models.Transaction.product_name == product,
-                models.Transaction.type == TYPE_EMANET,
-            )
-            .scalar()
-        )
-        emanetten_alis_qty = (
-            db.query(func.coalesce(func.sum(models.Transaction.quantity), 0.0))
-            .filter(
-                models.Transaction.user_id == user_id,
-                models.Transaction.product_name == product,
-                models.Transaction.type == TYPE_EMANETTEN_ALIS,
-            )
-            .scalar()
-        )
-        emanet_balance = (emanet_qty or 0.0) - (emanetten_alis_qty or 0.0)
+        # Emanet - Emanetten Alış (emanet balansı)
+        emanet_qty, _ = get(product, TYPE_EMANET)
+        emanetten_alis_qty, _ = get(product, TYPE_EMANETTEN_ALIS)
+        emanet_balance = emanet_qty - emanetten_alis_qty
 
-        # Güncel fiziksel depo stoğu: (tüm normal alış + tüm emanet) - tüm satışlar
-        total_bought_incl_emanet = (
-            db.query(func.coalesce(func.sum(models.Transaction.quantity), 0.0))
-            .filter(
-                models.Transaction.user_id == user_id,
-                models.Transaction.product_name == product,
-            )
-            .scalar()
-        )
-        sold_quantity = (
-            db.query(func.coalesce(func.sum(models.Sale.quantity), 0.0))
-            .filter(
-                models.Sale.user_id == user_id,
-                models.Sale.product_name == product,
-            )
-            .scalar()
-        )
-        physical_stock = (total_bought_incl_emanet or 0.0) - (sold_quantity or 0.0)
-
-        # Satışlar
-        sold_amount = (
-            db.query(func.coalesce(func.sum(models.Sale.quantity * models.Sale.price), 0.0))
-            .filter(
-                models.Sale.user_id == user_id,
-                models.Sale.product_name == product,
-            )
-            .scalar()
-        )
+        # Güncel fiziksel depo stoğu: (tüm alışlar + tüm emanet) - tüm satışlar
+        total_bought = bought_quantity + emanet_qty
+        sold_quantity, sold_amount = sale_agg.get(product, (0.0, 0.0))
+        physical_stock = total_bought - sold_quantity
 
         # Ortalama alış fiyatı (SADECE satın alınanlar: normal + emanetten alış)
-        avg_buy_price = (bought_amount or 0.0) / bought_quantity if bought_quantity else 0.0
-        avg_sell_price = (sold_amount or 0.0) / sold_quantity if sold_quantity else 0.0
+        avg_buy_price = bought_amount / bought_quantity if bought_quantity else 0.0
+        avg_sell_price = sold_amount / sold_quantity if sold_quantity else 0.0
 
         # Kâr/zarar = (ort satış - ort alış) * satılan toplam
-        profit_loss = (avg_sell_price - avg_buy_price) * (sold_quantity or 0.0)
+        profit_loss = (avg_sell_price - avg_buy_price) * sold_quantity
 
         rows.append(
             {
                 "product_name": product,
-                "total_purchased_quantity": round(bought_quantity or 0.0, 3),
-                "total_purchased_amount": round(bought_amount or 0.0, 2),
+                "total_purchased_quantity": round(bought_quantity, 3),
+                "total_purchased_amount": round(bought_amount, 2),
                 "emanet_balance": round(emanet_balance, 3),
-                "bought_emanet": round(emanetten_alis_qty or 0.0, 3),
+                "bought_emanet": round(emanetten_alis_qty, 3),
                 "physical_stock": round(physical_stock, 3),
-                "sold_quantity": round(sold_quantity or 0.0, 3),
-                "sold_amount": round(sold_amount or 0.0, 2),
+                "sold_quantity": round(sold_quantity, 3),
+                "sold_amount": round(sold_amount, 2),
                 "avg_buy_price": round(avg_buy_price, 2),
                 "avg_sell_price": round(avg_sell_price, 2),
                 "profit_loss": round(profit_loss, 2),
