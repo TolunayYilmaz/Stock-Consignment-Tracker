@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { BarChart3, Loader2, Package, TrendingDown, TrendingUp, Warehouse } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
@@ -9,7 +9,7 @@ const fmt = (n, max = 3) => n.toLocaleString('tr-TR', { maximumFractionDigits: m
 const fmtMoney = (n) => `${n.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺`
 
 function BarChart({ data }) {
-  const max = Math.max(...data.map((d) => Math.abs(d.value)), 1)
+  const max = useMemo(() => Math.max(...data.map((d) => Math.abs(d.value)), 1), [data])
   return (
     <div className="flex h-56 items-end gap-3 px-2">
       {data.map((d) => (
@@ -39,33 +39,40 @@ export default function Dashboard() {
     dispatch(fetchDashboard())
   }, [dispatch])
 
-  const totalProfit = rows.reduce((sum, r) => sum + r.profit_loss, 0)
-  const totalStock = rows.reduce((sum, r) => sum + r.physical_stock, 0)
-  const totalEmanet = rows.reduce((sum, r) => sum + r.emanet_balance, 0)
+  // Yalnızca ham veri değiştiğinde yeniden hesaplanır (her render'da değil)
+  const { totalProfit, totalStock, totalEmanet, stats, chartData } = useMemo(() => {
+    const totalProfit = rows.reduce((sum, r) => sum + r.profit_loss, 0)
+    const totalStock = rows.reduce((sum, r) => sum + r.physical_stock, 0)
+    const totalEmanet = rows.reduce((sum, r) => sum + r.emanet_balance, 0)
 
-  const stats = [
-    {
-      label: 'Toplam Kâr/Zarar',
-      value: fmtMoney(totalProfit),
-      sub: totalProfit < 0 ? 'Zararda' : 'Kârda',
-      icon: totalProfit >= 0 ? TrendingUp : TrendingDown,
-      cls: totalProfit >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600',
-    },
-    {
-      label: 'Fiziksel Stok',
-      value: `${fmt(totalStock)} ton`,
-      sub: 'Depoda kalan ürün',
-      icon: Warehouse,
-      cls: 'bg-amber-100 text-amber-700',
-    },
-    {
-      label: 'Müşteri Emaneti',
-      value: `${fmt(totalEmanet)} ton`,
-      sub: 'Emanette bekleyen',
-      icon: Package,
-      cls: 'bg-farm-100 text-green-700',
-    },
-  ]
+    const stats = [
+      {
+        label: 'Toplam Kâr/Zarar',
+        value: fmtMoney(totalProfit),
+        sub: totalProfit < 0 ? 'Zararda' : 'Kârda',
+        icon: totalProfit >= 0 ? TrendingUp : TrendingDown,
+        cls: totalProfit >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600',
+      },
+      {
+        label: 'Fiziksel Stok',
+        value: `${fmt(totalStock)} ton`,
+        sub: 'Depoda kalan ürün',
+        icon: Warehouse,
+        cls: 'bg-amber-100 text-amber-700',
+      },
+      {
+        label: 'Müşteri Emaneti',
+        value: `${fmt(totalEmanet)} ton`,
+        sub: 'Emanette bekleyen',
+        icon: Package,
+        cls: 'bg-farm-100 text-green-700',
+      },
+    ]
+
+    const chartData = rows.map((r) => ({ label: r.product_name, value: r.profit_loss }))
+
+    return { totalProfit, totalStock, totalEmanet, stats, chartData }
+  }, [rows])
 
   return (
     <div>
@@ -101,7 +108,7 @@ export default function Dashboard() {
             <Loader2 className="animate-spin text-green-700" />
           </div>
         ) : (
-          <BarChart data={rows.map((r) => ({ label: r.product_name, value: r.profit_loss }))} />
+          <BarChart data={chartData} />
         )}
       </div>
 

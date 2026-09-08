@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Loader2, Search, UserPlus, Users } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
@@ -33,8 +33,11 @@ export default function Customers() {
     }
   }
 
-  const filtered = items.filter((c) => c.name.toLowerCase().includes(query.toLowerCase()))
-  const products = items[0] ? Object.keys(items[0].balances || {}) : []
+  const { filtered, products } = useMemo(() => {
+    const filtered = items.filter((c) => c.name.toLowerCase().includes(query.toLowerCase()))
+    const products = items[0] ? Object.keys(items[0].balances || {}) : []
+    return { filtered, products }
+  }, [items, query])
 
   return (
     <div>

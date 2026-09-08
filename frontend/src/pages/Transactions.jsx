@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { ArrowLeftRight, Loader2, Save } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
@@ -51,7 +51,10 @@ export default function Transactions() {
     }
   }
 
-  const totalZarar = transactions.reduce((s, t) => s + t.quantity * t.price, 0)
+  const totalZarar = useMemo(
+    () => transactions.reduce((s, t) => s + t.quantity * t.price, 0),
+    [transactions]
+  )
 
   return (
     <div>

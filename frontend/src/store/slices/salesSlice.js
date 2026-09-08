@@ -1,10 +1,11 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import api from '../../api/client'
 import { logout } from './authSlice'
+import { fetchDashboard } from './dashboardSlice'
 
 export const fetchSales = createAsyncThunk(
   'sales/fetch',
-  async ({ force } = {}) => (await api.get('/sales')).data,
+  async ({ force, silent } = {}) => (await api.get('/sales')).data,
   {
     condition: ({ force } = {}, { getState }) => {
       const state = getState().sales
@@ -25,8 +26,12 @@ export const addSale = createAsyncThunk(
       price: parseFloat(price) || 0,
     }
     if (date) payload.date = new Date(date).toISOString()
-    await api.post('/sales', payload)
-    await dispatch(fetchSales({ force: true }))
+    const res = await api.post('/sales', payload)
+    // Optimistic: yeni satışı anında listeye ekle
+    dispatch(salesSlice.actions.appendItem(res.data))
+    // Arka planda sessizce doğrula + dashboard'u tazele (spinner yok)
+    await dispatch(fetchSales({ force: true, silent: true }))
+    await dispatch(fetchDashboard({ force: true, silent: true }))
   }
 )
 
@@ -41,12 +46,15 @@ export const salesSlice = createSlice({
   name: 'sales',
   initialState,
   reducers: {
+    appendItem: (state, action) => {
+      state.items = [action.payload, ...state.items]
+    },
     clearSales: () => initialState,
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchSales.pending, (state) => {
-        state.loading = true
+      .addCase(fetchSales.pending, (state, action) => {
+        if (!action.meta.arg?.silent) state.loading = true
         state.error = ''
       })
       .addCase(fetchSales.fulfilled, (state, action) => {
@@ -63,5 +71,5 @@ export const salesSlice = createSlice({
   },
 })
 
-export const { clearSales } = salesSlice.actions
+export const { appendItem, clearSales } = salesSlice.actions
 export default salesSlice.reducer

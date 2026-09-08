@@ -4,7 +4,7 @@ import { logout } from './authSlice'
 
 export const fetchCustomers = createAsyncThunk(
   'customers/fetch',
-  async ({ force } = {}) => (await api.get('/customers')).data,
+  async ({ force, silent } = {}) => (await api.get('/customers')).data,
   {
     // Yalnızca daha önce yüklenmemişse veya açıkça force edilmişse API çağır
     condition: ({ force } = {}, { getState }) => {
@@ -18,7 +18,8 @@ export const fetchCustomers = createAsyncThunk(
 
 export const addCustomer = createAsyncThunk('customers/add', async ({ name }, { dispatch }) => {
   await api.post('/customers', { name: name.trim() })
-  await dispatch(fetchCustomers({ force: true }))
+  // Arka planda sessizce güncelle: kullanıcı loading ekranı görmez
+  await dispatch(fetchCustomers({ force: true, silent: true }))
 })
 
 const initialState = {
@@ -36,8 +37,8 @@ export const customersSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchCustomers.pending, (state) => {
-        state.loading = true
+      .addCase(fetchCustomers.pending, (state, action) => {
+        if (!action.meta.arg?.silent) state.loading = true
         state.error = ''
       })
       .addCase(fetchCustomers.fulfilled, (state, action) => {

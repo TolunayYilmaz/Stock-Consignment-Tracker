@@ -4,12 +4,12 @@ import { logout } from './authSlice'
 
 export const fetchDashboard = createAsyncThunk(
   'dashboard/fetch',
-  async (arg = {}) => (await api.get('/dashboard')).data,
+  async ({ force, silent } = {}) => (await api.get('/dashboard')).data,
   {
-    condition: (arg = {}, { getState }) => {
+    condition: ({ force } = {}, { getState }) => {
       const state = getState().dashboard
       if (state.loading) return false
-      if (arg.force) return true
+      if (force) return true
       return !state.loaded
     },
   }
@@ -30,8 +30,8 @@ export const dashboardSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchDashboard.pending, (state) => {
-        state.loading = true
+      .addCase(fetchDashboard.pending, (state, action) => {
+        if (!action.meta.arg?.silent) state.loading = true
         state.error = ''
       })
       .addCase(fetchDashboard.fulfilled, (state, action) => {

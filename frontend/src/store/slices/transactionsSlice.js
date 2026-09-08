@@ -1,10 +1,11 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import api from '../../api/client'
 import { logout } from './authSlice'
+import { fetchDashboard } from './dashboardSlice'
 
 export const fetchTransactions = createAsyncThunk(
   'transactions/fetch',
-  async ({ force } = {}) => (await api.get('/transactions')).data,
+  async ({ force, silent } = {}) => (await api.get('/transactions')).data,
   {
     condition: ({ force } = {}, { getState }) => {
       const state = getState().transactions
@@ -26,8 +27,12 @@ export const addTransaction = createAsyncThunk(
       price: parseFloat(price) || 0,
     }
     if (date) payload.date = new Date(date).toISOString()
-    await api.post('/transactions', payload)
-    await dispatch(fetchTransactions({ force: true }))
+    const res = await api.post('/transactions', payload)
+    // Optimistic: yeni kaydı anında listeye ekle
+    dispatch(transactionsSlice.actions.appendItem(res.data))
+    // Sonra arka planda sessizce doğrula + dashboard'u tazele (spinner yok)
+    await dispatch(fetchTransactions({ force: true, silent: true }))
+    await dispatch(fetchDashboard({ force: true, silent: true }))
   }
 )
 
@@ -42,12 +47,15 @@ export const transactionsSlice = createSlice({
   name: 'transactions',
   initialState,
   reducers: {
+    appendItem: (state, action) => {
+      state.items = [action.payload, ...state.items]
+    },
     clearTransactions: () => initialState,
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchTransactions.pending, (state) => {
-        state.loading = true
+      .addCase(fetchTransactions.pending, (state, action) => {
+        if (!action.meta.arg?.silent) state.loading = true
         state.error = ''
       })
       .addCase(fetchTransactions.fulfilled, (state, action) => {
@@ -64,5 +72,5 @@ export const transactionsSlice = createSlice({
   },
 })
 
-export const { clearTransactions } = transactionsSlice.actions
+export const { appendItem, clearTransactions } = transactionsSlice.actions
 export default transactionsSlice.reducer

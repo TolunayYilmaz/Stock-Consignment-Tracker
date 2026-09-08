@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Loader2, Save, ShoppingCart } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
@@ -44,7 +44,10 @@ export default function Sales() {
     }
   }
 
-  const totalRevenue = sales.reduce((s, sale) => s + sale.quantity * sale.price, 0)
+  const totalRevenue = useMemo(
+    () => sales.reduce((s, sale) => s + sale.quantity * sale.price, 0),
+    [sales]
+  )
 
   return (
     <div>
