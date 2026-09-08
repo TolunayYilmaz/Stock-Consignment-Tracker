@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { BarChart3, Banknote, FileSpreadsheet, Loader2, Package, TrendingDown, TrendingUp, Warehouse } from 'lucide-react'
+import { BarChart3, Banknote, ChevronRight, FileSpreadsheet, Loader2, Package, TrendingDown, TrendingUp, Warehouse } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import ProductBadge from '../components/ProductBadge'
-import StockDetailModal from '../components/StockDetailModal'
+import BreakdownModal from '../components/BreakdownModal'
 import { fetchCustomers } from '../store/slices/customersSlice'
 import { fetchTransactions } from '../store/slices/transactionsSlice'
 import { fetchSales } from '../store/slices/salesSlice'
@@ -27,14 +27,17 @@ const YEAR_OPTIONS = [
   { value: 2024, label: '2024' },
 ]
 
-function yearOf(d) {
-  return new Date(d).getFullYear()
-}
-
-// Backend services.get_dashboard ile birebir aynı formuller, sadece yıla göre filtreli.
+// Backend services.get_dashboard ile birebir ayni formuller, yila gore filtrelenmis.
+// Filtre mantigi: secili yil "Tumu" degilse kayitlarin yili tam olarak eslesmeli.
 function computeYearRows(transactions, sales, year) {
-  const txns = year === 'all' ? transactions : transactions.filter((t) => yearOf(t.date) === year)
-  const sls = year === 'all' ? sales : sales.filter((s) => yearOf(s.date) === year)
+  const isAll = year === 'all'
+  const targetYear = !isAll ? parseInt(year, 10) : null
+  const txns = isAll
+    ? transactions
+    : transactions.filter((t) => new Date(t.date).getFullYear() === targetYear)
+  const sls = isAll
+    ? sales
+    : sales.filter((s) => new Date(s.date).getFullYear() === targetYear)
 
   const txnAgg = {}
   for (const t of txns) {
@@ -135,6 +138,7 @@ export default function Dashboard() {
   const salesLoading = useSelector((state) => state.sales.loading)
   const [selectedYear, setSelectedYear] = useState('all')
   const [stockModalOpen, setStockModalOpen] = useState(false)
+  const [emanetModalOpen, setEmanetModalOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState('')
 
@@ -195,6 +199,7 @@ export default function Dashboard() {
         icon: Warehouse,
         cls: 'bg-amber-100 text-amber-700',
         clickable: true,
+        modal: 'stock',
       },
       {
         label: 'Müşteri Emaneti',
@@ -202,6 +207,8 @@ export default function Dashboard() {
         sub: 'Emanette bekleyen',
         icon: Package,
         cls: 'bg-farm-100 text-green-700',
+        clickable: true,
+        modal: 'emanet',
       },
       {
         label: 'Toplam Ciro',
@@ -268,18 +275,36 @@ export default function Dashboard() {
         {stats.map((s) => (
           <div
             key={s.label}
-            onClick={s.clickable ? () => setStockModalOpen(true) : undefined}
-            className={`card p-5 ${s.clickable ? 'cursor-pointer transition hover:shadow-md' : ''}`}
+            onClick={
+              s.modal === 'stock'
+                ? () => setStockModalOpen(true)
+                : s.modal === 'emanet'
+                  ? () => setEmanetModalOpen(true)
+                  : undefined
+            }
+            className={
+              s.clickable
+                ? 'card group cursor-pointer p-5 transition-all duration-300 hover:-translate-y-1 hover:bg-farm-50 hover:shadow-xl hover:ring-2 hover:ring-green-300'
+                : 'card p-5'
+            }
+            title={s.clickable ? 'Detayları görüntülemek için tıklayın' : undefined}
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-stone-500">{s.label}</p>
+                <p className="text-sm text-stone-500 group-hover:text-green-800">{s.label}</p>
                 <p className={`mt-1 text-2xl font-bold ${totalProfit >= 0 && s.label === 'Toplam Kâr/Zarar' ? 'text-green-700' : 'text-stone-800'}`}>
                   {s.value}
                 </p>
-                <p className="mt-0.5 text-xs text-stone-400">{s.sub}</p>
+                <p className="mt-0.5 flex items-center gap-1 text-xs text-stone-400">
+                  {s.sub}
+                  {s.clickable && (
+                    <span className="inline-flex items-center gap-0.5 font-semibold text-green-700 opacity-60 transition group-hover:translate-x-0.5 group-hover:opacity-100">
+                      Detay göster <ChevronRight size={12} />
+                    </span>
+                  )}
+                </p>
               </div>
-              <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${s.cls}`}>
+              <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${s.cls} transition group-hover:scale-110`}>
                 <s.icon size={22} />
               </span>
             </div>
@@ -337,10 +362,20 @@ export default function Dashboard() {
       </div>
 
       {stockModalOpen && (
-        <StockDetailModal
+        <BreakdownModal
+          mode="stock"
           rows={yearRows}
-          yearLabel={`Seçili Yıl: ${yearLabel}`}
+          yearLabel={yearLabel}
           onClose={() => setStockModalOpen(false)}
+        />
+      )}
+
+      {emanetModalOpen && (
+        <BreakdownModal
+          mode="emanet"
+          rows={yearRows}
+          yearLabel={yearLabel}
+          onClose={() => setEmanetModalOpen(false)}
         />
       )}
     </div>
