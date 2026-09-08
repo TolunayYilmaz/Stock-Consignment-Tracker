@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { ArrowLeftRight, Loader2, Save, Trash2 } from 'lucide-react'
+import { ArrowLeftRight, Loader2, Save, Search, Trash2 } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import ProductBadge from '../components/ProductBadge'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -33,6 +33,10 @@ export default function Transactions() {
   const [deleteId, setDeleteId] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedYear, setSelectedYear] = useState('Tümü')
+
+  const YEAR_OPTIONS = ['Tümü', '2026', '2025', '2024']
 
   useEffect(() => {
     dispatch(fetchCustomers())
@@ -59,6 +63,17 @@ export default function Transactions() {
     () => transactions.reduce((s, t) => s + t.quantity * t.price, 0),
     [transactions]
   )
+
+  const filteredTransactions = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    return transactions.filter((t) => {
+      const matchesName =
+        !q || (t.customer_name || '').toLowerCase().includes(q)
+      const matchesYear =
+        selectedYear === 'Tümü' || new Date(t.date).getFullYear() === parseInt(selectedYear, 10)
+      return matchesName && matchesYear
+    })
+  }, [transactions, searchQuery, selectedYear])
 
   const handleDelete = async () => {
     if (!deleteId) return
@@ -144,6 +159,35 @@ export default function Transactions() {
       {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
       {deleteError && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{deleteError}</p>}
 
+      <div className="card mb-4 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-xs">
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Müşteri adına göre ara..."
+            className="input-field pl-9"
+            aria-label="Müşteri ara"
+          />
+        </div>
+        <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
+          <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Yıl</span>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
+            aria-label="Yıl seçimi"
+          >
+            {YEAR_OPTIONS.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div className="card overflow-x-auto">
         {loading ? (
           <div className="flex items-center justify-center p-10">
@@ -164,7 +208,7 @@ export default function Transactions() {
               </tr>
             </thead>
             <tbody>
-              {transactions.map((t) => (
+              {filteredTransactions.map((t) => (
                 <tr key={t.id} className="border-b border-stone-50 hover:bg-farm-50/50">
                   <td className="td">{new Date(t.date).toLocaleDateString('tr-TR')}</td>
                   <td className="td font-semibold text-stone-800">{t.customer_name}</td>
@@ -200,6 +244,12 @@ export default function Transactions() {
           </table>
         )}
         {!loading && transactions.length === 0 && <p className="p-4 text-stone-500">Henüz işlem eklenmemiş.</p>}
+        {!loading && transactions.length > 0 && filteredTransactions.length === 0 && (
+          <div className="flex items-center justify-center gap-2 px-4 py-10 text-stone-500">
+            <Search size={18} />
+            <p className="text-sm">Bu kriterlere uygun işlem bulunamadı.</p>
+          </div>
+        )}
       </div>
 
       <ConfirmDialog
