@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { ArrowLeftRight, Loader2, Save } from 'lucide-react'
+import { ArrowLeftRight, Loader2, Save, Trash2 } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import ProductBadge from '../components/ProductBadge'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { fetchCustomers } from '../store/slices/customersSlice'
-import { addTransaction, fetchTransactions } from '../store/slices/transactionsSlice'
+import { addTransaction, deleteTransaction, fetchTransactions } from '../store/slices/transactionsSlice'
 import { PRODUCTS, TRANSACTION_TYPES } from '../api/constants'
 
 const typeCls = {
@@ -29,6 +30,9 @@ export default function Transactions() {
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => {
     dispatch(fetchCustomers())
@@ -55,6 +59,20 @@ export default function Transactions() {
     () => transactions.reduce((s, t) => s + t.quantity * t.price, 0),
     [transactions]
   )
+
+  const handleDelete = async () => {
+    if (!deleteId) return
+    setDeleting(true)
+    try {
+      await dispatch(deleteTransaction(deleteId)).unwrap()
+      setDeleteId(null)
+    } catch (err) {
+      setDeleteError(err.response?.data?.detail || 'İşlem silinemedi')
+      setDeleteId(null)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   return (
     <div>
@@ -124,6 +142,7 @@ export default function Transactions() {
       </form>
 
       {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+      {deleteError && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{deleteError}</p>}
 
       <div className="card overflow-x-auto">
         {loading ? (
@@ -131,7 +150,7 @@ export default function Transactions() {
             <Loader2 className="animate-spin text-green-700" />
           </div>
         ) : (
-          <table className="w-full min-w-[860px] text-sm">
+          <table className="w-full min-w-[940px] text-sm">
             <thead>
               <tr className="border-b border-stone-100 bg-stone-50">
                 <th className="th">Tarih</th>
@@ -141,6 +160,7 @@ export default function Transactions() {
                 <th className="th">Miktar (ton)</th>
                 <th className="th">Fiyat (₺/kg)</th>
                 <th className="th">Tutar</th>
+                <th className="th text-right">İşlemler</th>
               </tr>
             </thead>
             <tbody>
@@ -159,6 +179,21 @@ export default function Transactions() {
                   <td className="td">{t.quantity.toLocaleString('tr-TR')}</td>
                   <td className="td">{t.price.toLocaleString('tr-TR')}</td>
                   <td className="td font-medium">{totalZarar >= 0 && (t.quantity * t.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}</td>
+                  <td className="td">
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteError('')
+                          setDeleteId(t.id)
+                        }}
+                        className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                        title="İşlemi sil"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -166,6 +201,19 @@ export default function Transactions() {
         )}
         {!loading && transactions.length === 0 && <p className="p-4 text-stone-500">Henüz işlem eklenmemiş.</p>}
       </div>
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        title="İşlemi Sil"
+        message="Bu işlemi silmek istediğinize emin misiniz?"
+        detail={deleteId ? transactions.find((t) => t.id === deleteId)?.customer_name : ''}
+        confirming={deleting}
+        onCancel={() => {
+          setDeleteId(null)
+          setDeleting(false)
+        }}
+        onConfirm={handleDelete}
+      />
     </div>
   )
 }

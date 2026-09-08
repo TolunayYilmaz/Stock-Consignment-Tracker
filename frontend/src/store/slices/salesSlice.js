@@ -27,11 +27,18 @@ export const addSale = createAsyncThunk(
     }
     if (date) payload.date = new Date(date).toISOString()
     const res = await api.post('/sales', payload)
-    // Optimistic: yeni satışı anında listeye ekle
     dispatch(salesSlice.actions.appendItem(res.data))
-    // Arka planda sessizce doğrula + dashboard'u tazele (spinner yok)
     await dispatch(fetchSales({ force: true, silent: true }))
     await dispatch(fetchDashboard({ force: true, silent: true }))
+  }
+)
+
+export const deleteSale = createAsyncThunk(
+  'sales/delete',
+  async (id, { dispatch }) => {
+    await api.delete(`/sales/${id}`)
+    dispatch(fetchDashboard({ force: true, silent: true }))
+    return id
   }
 )
 
@@ -65,6 +72,12 @@ export const salesSlice = createSlice({
       .addCase(fetchSales.rejected, (state, action) => {
         state.loading = false
         state.error = action.error?.message || 'Satışlar alınamadı'
+      })
+      .addCase(deleteSale.fulfilled, (state, action) => {
+        state.items = state.items.filter((s) => s.id !== action.payload)
+      })
+      .addCase(deleteSale.rejected, (state, action) => {
+        state.error = action.error?.message || 'Satış silinemedi'
       })
       .addCase('auth/login/fulfilled', () => initialState)
       .addCase(logout.fulfilled, () => initialState)

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Loader2, Search, UserPlus, Users } from 'lucide-react'
+import { Loader2, Search, Trash2, UserPlus, Users } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
-import { addCustomer, fetchCustomers } from '../store/slices/customersSlice'
+import ConfirmDialog from '../components/ConfirmDialog'
+import { addCustomer, deleteCustomer, fetchCustomers } from '../store/slices/customersSlice'
 
 const fmt = (n) => n?.toLocaleString('tr-TR', { maximumFractionDigits: 3 }) ?? 0
 
@@ -13,6 +14,9 @@ export default function Customers() {
   const [query, setQuery] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
+  const [deleteId, setDeleteId] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => {
     dispatch(fetchCustomers())
@@ -30,6 +34,20 @@ export default function Customers() {
       setFormError(err.response?.data?.detail || 'Müşteri eklenemedi')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteId) return
+    setDeleting(true)
+    try {
+      await dispatch(deleteCustomer(deleteId)).unwrap()
+      setDeleteId(null)
+    } catch (err) {
+      setDeleteError(err.response?.data?.detail || 'Müşteri silinemedi')
+      setDeleteId(null)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -76,6 +94,7 @@ export default function Customers() {
       </div>
 
       {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+      {deleteError && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{deleteError}</p>}
 
       <div className="card overflow-x-auto">
         {loading ? (
@@ -83,7 +102,7 @@ export default function Customers() {
             <Loader2 className="animate-spin text-green-700" />
           </div>
         ) : (
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[820px] text-sm">
             <thead>
               <tr className="border-b border-stone-100 bg-stone-50">
                 <th className="th">Müşteri</th>
@@ -92,6 +111,7 @@ export default function Customers() {
                     {p} (ton)
                   </th>
                 ))}
+                <th className="th text-right">İşlemler</th>
               </tr>
             </thead>
             <tbody>
@@ -106,6 +126,21 @@ export default function Customers() {
                       </td>
                     )
                   })}
+                  <td className="td">
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteError('')
+                          setDeleteId(c.id)
+                        }}
+                        className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                        title="Müşteriyi sil"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -115,6 +150,19 @@ export default function Customers() {
           <p className="p-4 text-stone-500">Müşteri bulunamadı.</p>
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        title="Müşteriyi Sil"
+        message="Bu müşteriyi silmek istediğinize emin misiniz?"
+        detail={deleteId ? items.find((c) => c.id === deleteId)?.name : ''}
+        confirming={deleting}
+        onCancel={() => {
+          setDeleteId(null)
+          setDeleting(false)
+        }}
+        onConfirm={handleDelete}
+      />
     </div>
   )
 }

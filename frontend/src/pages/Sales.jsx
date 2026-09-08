@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Loader2, Save, ShoppingCart } from 'lucide-react'
+import { Loader2, Save, ShoppingCart, Trash2 } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import ProductBadge from '../components/ProductBadge'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { fetchCustomers } from '../store/slices/customersSlice'
-import { addSale, fetchSales } from '../store/slices/salesSlice'
+import { addSale, deleteSale, fetchSales } from '../store/slices/salesSlice'
 import { PRODUCTS } from '../api/constants'
 
 const emptyForm = {
@@ -22,6 +23,9 @@ export default function Sales() {
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => {
     dispatch(fetchCustomers())
@@ -48,6 +52,20 @@ export default function Sales() {
     () => sales.reduce((s, sale) => s + sale.quantity * sale.price, 0),
     [sales]
   )
+
+  const handleDelete = async () => {
+    if (!deleteId) return
+    setDeleting(true)
+    try {
+      await dispatch(deleteSale(deleteId)).unwrap()
+      setDeleteId(null)
+    } catch (err) {
+      setDeleteError(err.response?.data?.detail || 'Satış silinemedi')
+      setDeleteId(null)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   return (
     <div>
@@ -104,6 +122,7 @@ export default function Sales() {
       </form>
 
       {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+      {deleteError && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{deleteError}</p>}
 
       <div className="card mb-4 flex items-center justify-between px-5 py-4">
         <span className="text-sm font-medium text-stone-500">Toplam Ciro</span>
@@ -118,7 +137,7 @@ export default function Sales() {
             <Loader2 className="animate-spin text-green-700" />
           </div>
         ) : (
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[820px] text-sm">
             <thead>
               <tr className="border-b border-stone-100 bg-stone-50">
                 <th className="th">Tarih</th>
@@ -127,6 +146,7 @@ export default function Sales() {
                 <th className="th">Miktar (ton)</th>
                 <th className="th">Fiyat (₺/kg)</th>
                 <th className="th">Tutar</th>
+                <th className="th text-right">İşlemler</th>
               </tr>
             </thead>
             <tbody>
@@ -140,6 +160,21 @@ export default function Sales() {
                   <td className="td">{s.quantity.toLocaleString('tr-TR')}</td>
                   <td className="td">{s.price.toLocaleString('tr-TR')}</td>
                   <td className="td font-medium">{(s.quantity * s.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}</td>
+                  <td className="td">
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteError('')
+                          setDeleteId(s.id)
+                        }}
+                        className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                        title="Satışı sil"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -147,6 +182,19 @@ export default function Sales() {
         )}
         {!loading && sales.length === 0 && <p className="p-4 text-stone-500">Henüz satış eklenmemiş.</p>}
       </div>
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        title="Satışı Sil"
+        message="Bu satışı silmek istediğinize emin misiniz?"
+        detail={deleteId ? sales.find((s) => s.id === deleteId)?.customer_name : ''}
+        confirming={deleting}
+        onCancel={() => {
+          setDeleteId(null)
+          setDeleting(false)
+        }}
+        onConfirm={handleDelete}
+      />
     </div>
   )
 }

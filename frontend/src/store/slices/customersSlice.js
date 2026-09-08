@@ -18,8 +18,12 @@ export const fetchCustomers = createAsyncThunk(
 
 export const addCustomer = createAsyncThunk('customers/add', async ({ name }, { dispatch }) => {
   await api.post('/customers', { name: name.trim() })
-  // Arka planda sessizce güncelle: kullanıcı loading ekranı görmez
   await dispatch(fetchCustomers({ force: true, silent: true }))
+})
+
+export const deleteCustomer = createAsyncThunk('customers/delete', async (id) => {
+  await api.delete(`/customers/${id}`)
+  return id
 })
 
 const initialState = {
@@ -49,6 +53,12 @@ export const customersSlice = createSlice({
       .addCase(fetchCustomers.rejected, (state, action) => {
         state.loading = false
         state.error = action.error?.message || 'Müşteriler alınamadı'
+      })
+      .addCase(deleteCustomer.fulfilled, (state, action) => {
+        state.items = state.items.filter((c) => c.id !== action.payload)
+      })
+      .addCase(deleteCustomer.rejected, (state, action) => {
+        state.error = action.error?.message || 'Müşteri silinemedi'
       })
       .addCase('auth/login/fulfilled', () => initialState)
       .addCase(logout.fulfilled, () => initialState)

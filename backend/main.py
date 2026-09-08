@@ -153,6 +153,32 @@ def create_customer(data: schemas.CustomerCreate, db: Session = Depends(get_db),
     return customer
 
 
+@app.delete("/api/customers/{customer_id}", response_model=schemas.CustomerOut)
+def delete_customer(
+    customer_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    customer = (
+        db.query(models.Customer)
+        .filter(models.Customer.id == customer_id, models.Customer.user_id == current_user.id)
+        .first()
+    )
+    if not customer:
+        raise HTTPException(status_code=404, detail="Müşteri bulunamadı")
+    has_txn = (
+        db.query(models.Transaction)
+        .filter(models.Transaction.customer_id == customer.id)
+        .first()
+    )
+    if has_txn:
+        raise HTTPException(status_code=400, detail="Bu müşterinin emanet/işlem kayıtları var; önce işlemleri silin")
+    out = schemas.CustomerOut.from_orm(customer)
+    db.delete(customer)
+    db.commit()
+    return out
+
+
 # ---------- TRANSACTIONS ----------
 @app.get("/api/transactions", response_model=list[schemas.TransactionOut])
 def list_transactions(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -183,6 +209,25 @@ def create_transaction(data: schemas.TransactionCreate, db: Session = Depends(ge
     return out
 
 
+@app.delete("/api/transactions/{transaction_id}", response_model=schemas.TransactionOut)
+def delete_transaction(
+    transaction_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    txn = (
+        db.query(models.Transaction)
+        .filter(models.Transaction.id == transaction_id, models.Transaction.user_id == current_user.id)
+        .first()
+    )
+    if not txn:
+        raise HTTPException(status_code=404, detail="İşlem bulunamadı")
+    out = _txn_out(txn)
+    db.delete(txn)
+    db.commit()
+    return out
+
+
 # ---------- SALES ----------
 @app.get("/api/sales", response_model=list[schemas.SaleOut])
 def list_sales(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -208,6 +253,25 @@ def create_sale(data: schemas.SaleCreate, db: Session = Depends(get_db), current
     db.commit()
     db.refresh(sale)
     return sale
+
+
+@app.delete("/api/sales/{sale_id}", response_model=schemas.SaleOut)
+def delete_sale(
+    sale_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    sale = (
+        db.query(models.Sale)
+        .filter(models.Sale.id == sale_id, models.Sale.user_id == current_user.id)
+        .first()
+    )
+    if not sale:
+        raise HTTPException(status_code=404, detail="Satış bulunamadı")
+    out = schemas.SaleOut.from_orm(sale)
+    db.delete(sale)
+    db.commit()
+    return out
 
 
 # ---------- DASHBOARD ----------

@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import api from '../../api/client'
 import { logout } from './authSlice'
+import { fetchCustomers } from './customersSlice'
 import { fetchDashboard } from './dashboardSlice'
 
 export const fetchTransactions = createAsyncThunk(
@@ -28,11 +29,19 @@ export const addTransaction = createAsyncThunk(
     }
     if (date) payload.date = new Date(date).toISOString()
     const res = await api.post('/transactions', payload)
-    // Optimistic: yeni kaydı anında listeye ekle
     dispatch(transactionsSlice.actions.appendItem(res.data))
-    // Sonra arka planda sessizce doğrula + dashboard'u tazele (spinner yok)
     await dispatch(fetchTransactions({ force: true, silent: true }))
     await dispatch(fetchDashboard({ force: true, silent: true }))
+  }
+)
+
+export const deleteTransaction = createAsyncThunk(
+  'transactions/delete',
+  async (id, { dispatch }) => {
+    await api.delete(`/transactions/${id}`)
+    dispatch(fetchCustomers({ force: true, silent: true }))
+    dispatch(fetchDashboard({ force: true, silent: true }))
+    return id
   }
 )
 
@@ -66,6 +75,12 @@ export const transactionsSlice = createSlice({
       .addCase(fetchTransactions.rejected, (state, action) => {
         state.loading = false
         state.error = action.error?.message || 'İşlemler alınamadı'
+      })
+      .addCase(deleteTransaction.fulfilled, (state, action) => {
+        state.items = state.items.filter((t) => t.id !== action.payload)
+      })
+      .addCase(deleteTransaction.rejected, (state, action) => {
+        state.error = action.error?.message || 'İşlem silinemedi'
       })
       .addCase('auth/login/fulfilled', () => initialState)
       .addCase(logout.fulfilled, () => initialState)
