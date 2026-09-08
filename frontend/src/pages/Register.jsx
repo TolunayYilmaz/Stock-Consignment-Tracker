@@ -1,17 +1,23 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Loader2, Tractor, UserPlus } from 'lucide-react'
+import { CheckSquare, FileText, Loader2, Tractor, UserPlus, X } from 'lucide-react'
 import api from '../api/client'
 
 export default function Register() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [kvkk, setKvkk] = useState(false)
+  const [kvkkOpen, setKvkkOpen] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   const onSubmit = async (e) => {
     e.preventDefault()
+    if (!kvkk) {
+      setError('Devam edebilmek için KVKK Aydınlatma Metni\'ni onaylamanız gerekmektedir.')
+      return
+    }
     setError('')
     setSubmitting(true)
     try {
@@ -64,7 +70,26 @@ export default function Register() {
                 required
               />
             </div>
-            <button type="submit" disabled={submitting} className="btn-primary w-full">
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-3 text-sm transition hover:border-green-300">
+              <input
+                type="checkbox"
+                checked={kvkk}
+                onChange={(e) => setKvkk(e.target.checked)}
+                required
+                className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-green-700"
+              />
+              <span className="text-stone-600">
+                <button
+                  type="button"
+                  onClick={() => setKvkkOpen(true)}
+                  className="font-semibold text-green-700 underline transition hover:text-green-800"
+                >
+                  KVKK Aydınlatma Metni
+                </button>
+                {' '}okudum ve onaylıyorum.
+              </span>
+            </label>
+            <button type="submit" disabled={submitting || !kvkk} className="btn-primary w-full">
               {submitting ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
               Kayıt Ol
             </button>
@@ -77,6 +102,68 @@ export default function Register() {
           </p>
         </div>
       </div>
+
+      {kvkkOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-stone-900/50 backdrop-blur-sm" onClick={() => setKvkkOpen(false)} />
+          <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-stone-100 bg-green-700 px-5 py-4">
+              <div className="flex items-center gap-2 text-white">
+                <FileText size={20} />
+                <h2 className="text-lg font-bold">KVKK Aydınlatma Metni</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setKvkkOpen(false)}
+                className="rounded-lg p-1 text-white/70 transition hover:bg-white/10 hover:text-white"
+                aria-label="Kapat"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 py-5 text-sm leading-relaxed text-stone-600">
+              <p>
+                6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) uyarınca, tarafımızca yürütülen
+                tarımsal stok ve emanet takip sistemi kapsamında verileriniz işlenmektedir.
+              </p>
+              <p className="font-semibold text-stone-800">1. Veri Sorumlusu</p>
+              <p>
+                Kişisel verileriniz, veri sorumlusu sıfatıyla <span className="font-semibold">Stok Emanet</span>{' '}
+                tarafından aşağıda açıklanan kapsamda işlenebilmektedir.
+              </p>
+              <p className="font-semibold text-stone-800">2. İşlenen Kişisel Veriler</p>
+              <p>E-posta adresiniz, kayıt tarihiniz ve sistem üzerinde oluşturduğunuz stok, satış ve emanet kayıtlarınız işlenmektedir.</p>
+              <p className="font-semibold text-stone-800">3. İşleme Amaçları</p>
+              <p>
+                Verileriniz; hesap oluşturma, kimlik doğrulama, ürün stok ve emanet takibinin sağlanması,
+                talep ve şikayetlerinizin yanıtlanması ile yasal yükümlülüklerin yerine getirilmesi amaçlarıyla işlenmektedir.
+              </p>
+              <p className="font-semibold text-stone-800">4. Verilerin Aktarılması</p>
+              <p>
+                Kişisel verileriniz, kanuni zorunluluklar ve ilgili mevzuat hükümleri dışında üçüncü kişilerle paylaşılmamaktadır.
+              </p>
+              <p className="font-semibold text-stone-800">5. Haklarınız</p>
+              <p>
+                KVKK'nın 11. maddesi kapsamında; verilerinizin işlenip işlenmediğini öğrenme, düzeltilmesini veya
+                silinmesini talep etme, işlemeye itiraz etme ve zararın giderilmesini isteme haklarına sahipsiniz.
+              </p>
+              <p>
+                Aydınlatma metnini okuduğunuz ve onayladığınız için teşekkür ederiz.
+              </p>
+            </div>
+            <div className="border-t border-stone-100 bg-stone-50 px-5 py-4">
+              <button
+                type="button"
+                onClick={() => { setKvkk(true); setKvkkOpen(false) }}
+                className="btn-primary w-full"
+              >
+                <CheckSquare size={16} />
+                Okudum, Onaylıyorum
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

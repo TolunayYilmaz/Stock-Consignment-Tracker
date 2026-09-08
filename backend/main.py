@@ -112,6 +112,32 @@ def admin_delete_user(
     return user
 
 
+@app.get("/api/admin/users/{user_id}/dashboard", response_model=schemas.UserDashboard)
+def admin_user_dashboard(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_admin: models.User = Depends(get_current_admin),
+):
+    """Belirli bir kullanıcının stok, ürün tipi ve işlem özetlerini döner. Read-only (SaaS, admin)."""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+
+    rows = services.get_dashboard(db, user.id)
+
+    total_physical_stock = round(sum(r["physical_stock"] for r in rows), 3)
+    total_emanet = round(sum(r["emanet_balance"] for r in rows), 3)
+    total_profit_loss = round(sum(r["profit_loss"] for r in rows), 2)
+
+    return schemas.UserDashboard(
+        user=user,
+        rows=rows,
+        total_physical_stock=total_physical_stock,
+        total_emanet=total_emanet,
+        total_profit_loss=total_profit_loss,
+    )
+
+
 # ---------- CUSTOMERS ----------
 @app.get("/api/customers", response_model=list[schemas.CustomerBalance])
 def list_customers(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):

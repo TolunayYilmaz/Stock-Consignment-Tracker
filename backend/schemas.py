@@ -101,3 +101,11 @@ class DashboardRow(BaseModel):
     avg_sell_price: float
     profit_loss: float
 
+
+class UserDashboard(BaseModel):
+    user: UserOut
+    rows: list[DashboardRow]
+    total_physical_stock: float
+    total_emanet: float
+    total_profit_loss: float
+

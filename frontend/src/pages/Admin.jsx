@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import { Loader2, ShieldCheck, Trash2, ShieldOff } from 'lucide-react'
+import { Eye, Loader2, ShieldCheck, Trash2, ShieldOff } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
+import UserDetailModal from '../components/UserDetailModal'
 import api from '../api/client'
 
 const fmtDate = (d) => new Date(d).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -13,6 +14,7 @@ export default function Admin() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [detailUser, setDetailUser] = useState(null)
 
   useEffect(() => {
     if (!user?.is_admin) {
@@ -49,7 +51,7 @@ export default function Admin() {
             <Loader2 className="animate-spin text-green-700" />
           </div>
         ) : (
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b border-stone-100 bg-stone-50">
                 <th className="th">E-posta</th>
@@ -74,15 +76,25 @@ export default function Admin() {
                     </span>
                   </td>
                   <td className="td">
-                    <button
-                      onClick={() => onDelete(u)}
-                      disabled={u.id === user.id}
-                      className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
-                      title={u.id === user.id ? 'Kendi hesabınızı silemezsiniz' : 'Kullanıcıyı sil'}
-                    >
-                      <Trash2 size={14} />
-                      Sil
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setDetailUser(u)}
+                        className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-50"
+                        title="Kullanıcı detayını görüntüle"
+                      >
+                        <Eye size={14} />
+                        Detay Gör
+                      </button>
+                      <button
+                        onClick={() => onDelete(u)}
+                        disabled={u.id === user.id}
+                        className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        title={u.id === user.id ? 'Kendi hesabınızı silemezsiniz' : 'Kullanıcıyı sil'}
+                      >
+                        <Trash2 size={14} />
+                        Sil
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -90,6 +102,8 @@ export default function Admin() {
           </table>
         )}
       </div>
+
+      {detailUser && <UserDetailModal user={detailUser} onClose={() => setDetailUser(null)} />}
     </div>
   )
 }
