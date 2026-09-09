@@ -8,6 +8,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import { fetchCustomers } from '../store/slices/customersSlice'
 import { addSale, deleteSale, fetchSales } from '../store/slices/salesSlice'
 import { PRODUCTS } from '../api/constants'
+import { getSeasonYearOptions } from '../utils/getSeasonYearOptions'
 
 const emptyForm = {
   customer_name: '',
@@ -17,7 +18,7 @@ const emptyForm = {
   date: '',
 }
 
-const YEAR_OPTIONS = ['Tümü', '2026', '2025', '2024']
+const YEAR_OPTIONS = getSeasonYearOptions()
 
 function isInSeason(dateStr, startDate) {
   const d = new Date(dateStr)
@@ -37,7 +38,7 @@ export default function Sales() {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedYear, setSelectedYear] = useState('Tümü')
+  const [selectedYear, setSelectedYear] = useState('all')
 
   useEffect(() => {
     dispatch(fetchCustomers())
@@ -66,7 +67,7 @@ export default function Sales() {
       const matchesName =
         !q || (s.customer_name || '').toLowerCase().includes(q)
       const matchesYear =
-        selectedYear === 'Tümü' || isInSeason(s.date, parseInt(selectedYear, 10))
+        selectedYear === 'all' || isInSeason(s.date, parseInt(selectedYear, 10))
       return matchesName && matchesYear
     })
   }, [sales, searchQuery, selectedYear])
@@ -174,9 +175,9 @@ export default function Sales() {
             className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
             aria-label="Sezon seçimi"
           >
-            {YEAR_OPTIONS.map((y) => (
-              <option key={y} value={y}>
-                {y === 'Tümü' ? 'Tümü (Kümülatif)' : `${y}-${parseInt(y, 10) + 1} Sezonu`}
+            {YEAR_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
               </option>
             ))}
           </select>

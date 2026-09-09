@@ -8,6 +8,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import { fetchCustomers } from '../store/slices/customersSlice'
 import { addTransaction, deleteTransaction, fetchTransactions } from '../store/slices/transactionsSlice'
 import { PRODUCTS, TRANSACTION_TYPES } from '../api/constants'
+import { getSeasonYearOptions } from '../utils/getSeasonYearOptions'
 
 const typeCls = {
   Emanet: 'bg-amber-100 text-amber-700',
@@ -35,9 +36,9 @@ export default function Transactions() {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedYear, setSelectedYear] = useState('Tümü')
+  const [selectedYear, setSelectedYear] = useState('all')
 
-  const YEAR_OPTIONS = ['Tümü', '2026', '2025', '2024']
+  const YEAR_OPTIONS = getSeasonYearOptions()
 
 function isInSeason(dateStr, startDate) {
   const d = new Date(dateStr)
@@ -78,7 +79,7 @@ function isInSeason(dateStr, startDate) {
       const matchesName =
         !q || (t.customer_name || '').toLowerCase().includes(q)
       const matchesYear =
-        selectedYear === 'Tümü' || isInSeason(t.date, parseInt(selectedYear, 10))
+        selectedYear === 'all' || isInSeason(t.date, parseInt(selectedYear, 10))
       return matchesName && matchesYear
     })
   }, [transactions, searchQuery, selectedYear])
@@ -187,9 +188,9 @@ function isInSeason(dateStr, startDate) {
             className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
             aria-label="Sezon seçimi"
           >
-            {YEAR_OPTIONS.map((y) => (
-              <option key={y} value={y}>
-                {y === 'Tümü' ? 'Tümü (Kümülatif)' : `${y}-${parseInt(y, 10) + 1} Sezonu`}
+            {YEAR_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
               </option>
             ))}
           </select>

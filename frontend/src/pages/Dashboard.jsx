@@ -11,6 +11,7 @@ import { fetchSales } from '../store/slices/salesSlice'
 import { fetchDashboard } from '../store/slices/dashboardSlice'
 import { store } from '../store/store'
 import { exportToExcel } from '../utils/exportExcel'
+import { getSeasonYearOptions } from '../utils/getSeasonYearOptions'
 
 const safeNum = (n) => (Number.isFinite(Number(n)) ? Number(n) : 0)
 const fmt = (n, max = 3) => safeNum(n).toLocaleString('tr-TR', { maximumFractionDigits: max })
@@ -28,12 +29,7 @@ const TYPE_NORMAL = 'Normal Alış'
 const TYPE_EMANET = 'Emanet'
 const TYPE_EMANETTEN_ALIS = 'Emanetten Alış'
 
-const YEAR_OPTIONS = [
-  { value: 'all', label: 'Tümü (Kümülatif)' },
-  { value: 2026, label: '2026-2027 Sezonu' },
-  { value: 2025, label: '2025-2026 Sezonu' },
-  { value: 2024, label: '2024-2025 Sezonu' },
-]
+const YEAR_OPTIONS = getSeasonYearOptions()
 
 // Tarımsal sezon kontrolü: Tarih 1 Temmuz startDate - 30 Haziran (startDate+1) aralığında mı?
 function isInSeason(dateStr, startDate) {
