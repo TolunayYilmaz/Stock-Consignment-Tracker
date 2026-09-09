@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertCircle, CheckCircle2, KeyRound, Mail, Tractor } from 'lucide-react'
 import api from '../api/client'
-import TireLoader from '../components/TireLoader'
+import TireLoader from '../components/ui/TireLoader'
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
@@ -74,7 +74,7 @@ export default function ForgotPassword() {
                   />
                 </div>
                 <button type="submit" disabled={submitting} className="btn-primary w-full">
-                  {submitting ? <TireLoader size={16} /> : <Mail size={16} />}
+                  {submitting ? <TireLoader className="h-4 w-4" /> : <Mail size={16} />}
                   Sıfırlama Bağlantısı Gönder
                 </button>
               </form>

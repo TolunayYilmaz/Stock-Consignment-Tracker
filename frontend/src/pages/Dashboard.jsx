@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { BarChart3, Banknote, ChevronRight, FileSpreadsheet, Package, TrendingDown, TrendingUp, Warehouse } from 'lucide-react'
-import TireLoader from '../components/TireLoader'
+import TireLoader from '../components/ui/TireLoader'
 import PageHeader from '../components/PageHeader'
 import ProductBadge from '../components/ProductBadge'
 import BreakdownModal from '../components/BreakdownModal'
@@ -259,7 +259,7 @@ export default function Dashboard() {
               className="flex items-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-green-800 disabled:opacity-60"
               title="Tüm verileri formüllerle Excel'e aktar"
             >
-              {exporting ? <TireLoader size={16} /> : <FileSpreadsheet size={16} />}
+              {exporting ? <TireLoader className="h-4 w-4" /> : <FileSpreadsheet size={16} />}
               Excel Olarak İndir
             </button>
           </>
@@ -317,7 +317,7 @@ export default function Dashboard() {
         <h2 className="mb-3 text-lg font-semibold text-stone-800">Ürün Bazlı Kâr/Zarar (₺)</h2>
         {loading ? (
           <div className="flex h-80 w-full items-center justify-center">
-            <TireLoader size={26} />
+            <TireLoader className="h-[26px] w-[26px]" />
           </div>
         ) : (
           <BarChart data={chartData} />

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AlertCircle, Building2, CheckCircle2, CheckSquare, FileText, LogIn, Phone, Tractor, UserPlus, X } from 'lucide-react'
 import api from '../api/client'
-import TireLoader from '../components/TireLoader'
+import TireLoader from '../components/ui/TireLoader'
 
 const PASSWORD_RULES = [
   { key: 'length', label: 'En az 8 karakter', test: (v) => v.length >= 8 },
@@ -210,7 +210,7 @@ export default function Register() {
               </span>
             </label>
             <button type="submit" disabled={submitting || !kvkk} className="btn-primary w-full">
-              {submitting ? <TireLoader size={16} /> : <UserPlus size={16} />}
+              {submitting ? <TireLoader className="h-4 w-4" /> : <UserPlus size={16} />}
               Kayıt Ol
             </button>
           </form>

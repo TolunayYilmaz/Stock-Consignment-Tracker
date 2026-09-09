@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux'
 import { BadgeCheck, CheckCircle2, Clock, Eye, KeyRound, ShieldCheck, Trash2, ShieldOff, X } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import UserDetailModal from '../components/UserDetailModal'
-import TireLoader from '../components/TireLoader'
+import TireLoader from '../components/ui/TireLoader'
 import api from '../api/client'
 
 const fmtDate = (d) => new Date(d).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -83,7 +83,7 @@ export default function Admin() {
       <div className="card overflow-x-auto">
         {loading ? (
           <div className="flex items-center justify-center p-10">
-            <TireLoader className="text-green-700" />
+            <TireLoader className="h-[22px] w-[22px]" />
           </div>
         ) : (
           <table className="w-full min-w-[920px] text-sm">
@@ -234,7 +234,7 @@ export default function Admin() {
                     disabled={resetting}
                     className="flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:opacity-60"
                   >
-                    {resetting && <TireLoader size={16} />}
+                    {resetting && <TireLoader className="h-4 w-4" />}
                     Evet, Sıfırla
                   </button>
                 </div>

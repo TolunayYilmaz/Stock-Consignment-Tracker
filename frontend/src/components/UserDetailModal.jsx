@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Package, TrendingUp, TrendingDown, Warehouse, X } from 'lucide-react'
-import TireLoader from './TireLoader'
+import TireLoader from './ui/TireLoader'
 import api from '../api/client'
 import ProductBadge from './ProductBadge'
 
@@ -72,7 +72,7 @@ export default function UserDetailModal({ user, onClose }) {
         <div className="flex-1 overflow-y-auto p-5">
           {loading ? (
             <div className="flex items-center justify-center p-12">
-              <TireLoader size={24} />
+              <TireLoader className="h-6 w-6" />
             </div>
           ) : error ? (
             <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>

@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Save, Search, ShoppingCart, Trash2 } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import ProductBadge from '../components/ProductBadge'
-import TireLoader from '../components/TireLoader'
+import TireLoader from '../components/ui/TireLoader'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { fetchCustomers } from '../store/slices/customersSlice'
 import { addSale, deleteSale, fetchSales } from '../store/slices/salesSlice'
@@ -179,7 +179,7 @@ export default function Sales() {
       <div className="card overflow-x-auto">
         {loading ? (
           <div className="flex items-center justify-center p-10">
-            <TireLoader size={24} />
+            <TireLoader className="h-6 w-6" />
           </div>
         ) : (
           <table className="w-full min-w-[820px] text-sm">

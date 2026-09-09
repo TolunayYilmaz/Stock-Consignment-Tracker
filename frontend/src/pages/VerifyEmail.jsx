@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AlertCircle, BadgeCheck, Tractor } from 'lucide-react'
 import api from '../api/client'
-import TireLoader from '../components/TireLoader'
+import TireLoader from '../components/ui/TireLoader'
 
 export default function VerifyEmail() {
   const navigate = useNavigate()
@@ -51,7 +51,7 @@ export default function VerifyEmail() {
 
           {status === 'loading' && (
             <div className="flex flex-col items-center gap-3 py-6">
-              <TireLoader size={30} />
+              <TireLoader className="h-[30px] w-[30px]" />
               <p className="text-sm text-stone-500">E-postanız doğrulanıyor...</p>
             </div>
           )}
