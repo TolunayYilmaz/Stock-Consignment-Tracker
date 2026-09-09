@@ -7,6 +7,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 import models
@@ -77,6 +78,15 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     user = db.query(models.User).filter(models.User.id == int(user_id)).first()
     if user is None:
         raise credentials_exception
+    # RLS politikaları için oturum değişkenlerini işaretle (supabase_rls_setup.sql ile birlikte çalışır)
+    db.execute(
+        text("SELECT set_config('app.current_user_id', :uid, true)"),
+        {"uid": str(user.id)},
+    )
+    db.execute(
+        text("SELECT set_config('app.user_is_admin', :is_admin, true)"),
+        {"is_admin": "true" if user.is_admin else "false"},
+    )
     return user
 
 
