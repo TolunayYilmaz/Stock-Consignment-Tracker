@@ -39,7 +39,9 @@ export const authSlice = createSlice({
         state.loading = false
       })
       .addCase(fetchMe.rejected, (state) => {
-        state.user = null
+        if (!localStorage.getItem('token')) {
+          state.user = null
+        }
         state.loading = false
       })
       .addCase(login.fulfilled, (state, action) => {

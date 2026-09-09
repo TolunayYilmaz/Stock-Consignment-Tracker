@@ -25,12 +25,32 @@ function clearTokens() {
   localStorage.removeItem(REFRESH_TOKEN_KEY)
 }
 
-let isRefreshing = false
-let queue = []
+function redirectToLogin() {
+  if (window.location.pathname !== '/login') {
+    window.location.href = '/login'
+  }
+}
 
-function flushQueue(error) {
-  queue.forEach((promise) => (error ? promise.reject(error) : promise.resolve()))
-  queue = []
+function isAuthError(error) {
+  return !!error.response && [401, 403].includes(error.response.status)
+}
+
+function handleRefreshFailure(error) {
+  if (isAuthError(error)) {
+    clearTokens()
+    api.defaults.headers.common.Authorization = ''
+    redirectToLogin()
+  }
+}
+
+let isRefreshing = false
+let failedQueue = []
+
+const processQueue = (error) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    error ? reject(error) : resolve()
+  })
+  failedQueue = []
 }
 
 function tryRefresh(refreshToken) {
@@ -38,6 +58,7 @@ function tryRefresh(refreshToken) {
     .post(`${api.defaults.baseURL}/auth/refresh`, { refresh_token: refreshToken })
     .then((res) => {
       storeTokens(res.data.access_token, res.data.refresh_token)
+      api.defaults.headers.common.Authorization = `Bearer ${res.data.access_token}`
       return res.data
     })
 }
@@ -56,12 +77,11 @@ api.interceptors.response.use(
     const originalRequest = error.config
     const status = error.response && error.response.status
 
-    if (status !== 401 || originalRequest._retry) {
+    if (status !== 401 || originalRequest._isRefreshCall) {
       return Promise.reject(error)
     }
 
-    // Refresh endpoint'inin kendi 401'i veya giriş hatası: asla otomatik refresh deneme
-    const url = (originalRequest.url || '')
+    const url = originalRequest.url || ''
     if (url.includes('/auth/refresh') || url === '/token') {
       return Promise.reject(error)
     }
@@ -69,32 +89,27 @@ api.interceptors.response.use(
     const refreshToken = getRefreshToken()
     if (!refreshToken) {
       clearTokens()
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
-      }
+      redirectToLogin()
       return Promise.reject(error)
     }
 
-    originalRequest._retry = true
-
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
-        queue.push({ resolve, reject })
+        failedQueue.push({ resolve, reject })
       }).then(() => api(originalRequest))
     }
 
     isRefreshing = true
+    originalRequest._isRefreshCall = true
+
     return tryRefresh(refreshToken)
       .then(() => {
-        flushQueue(null)
+        processQueue(null)
         return api(originalRequest)
       })
       .catch((refreshErr) => {
-        flushQueue(refreshErr)
-        clearTokens()
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login'
-        }
+        processQueue(refreshErr)
+        handleRefreshFailure(refreshErr)
         return Promise.reject(refreshErr)
       })
       .finally(() => {
@@ -102,5 +117,34 @@ api.interceptors.response.use(
       })
   }
 )
+
+if (typeof window !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      const token = getAccessToken()
+      const refreshToken = getRefreshToken()
+      if (token && refreshToken && !isRefreshing) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]))
+          const expiresIn = payload.exp * 1000 - Date.now()
+          if (expiresIn < 5 * 60 * 1000) {
+            isRefreshing = true
+            tryRefresh(refreshToken)
+              .then(() => processQueue(null))
+              .catch((refreshErr) => {
+                processQueue(new Error('refresh failed'))
+                handleRefreshFailure(refreshErr)
+              })
+              .finally(() => {
+                isRefreshing = false
+              })
+          }
+        } catch {
+          // Token decode failed — ignore, will be caught by next request
+        }
+      }
+    }
+  })
+}
 
 export default api
