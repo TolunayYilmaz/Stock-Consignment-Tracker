@@ -1,11 +1,12 @@
 import os
 import secrets
+import string
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -115,6 +116,34 @@ def me(current_user: models.User = Depends(get_current_user)):
     return current_user
 
 
+# ---------- PASSWORD RESET ----------
+@app.post("/api/auth/forgot-password")
+def forgot_password(data: schemas.ForgotPassword, request: Request, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == data.email).first()
+    token = secrets.token_urlsafe(32)
+    expiry = datetime.utcnow() + timedelta(minutes=15)
+    if user:
+        user.password_reset_token = token
+        user.password_reset_expiry = expiry
+        db.commit()
+        email_service.send_password_reset_email(user.email, token, str(request.base_url))
+    return {"detail": "Eğer bu e-posta adresi kayıtlıysa şifre sıfırlama bağlantısı gönderilmiştir."}
+
+
+@app.post("/api/auth/reset-password")
+def reset_password(data: schemas.ResetPassword, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.password_reset_token == data.token).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Geçersiz veya kullanılmış sıfırlama linki")
+    if user.password_reset_expiry and user.password_reset_expiry < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Sıfırlama linkinin süresi dolmuş. Lütfen yeni bir link talep edin.")
+    user.hashed_password = hash_password(data.new_password)
+    user.password_reset_token = None
+    user.password_reset_expiry = None
+    db.commit()
+    return {"detail": "Şifreniz başarıyla sıfırlandı. Artık yeni şifrenizle giriş yapabilirsiniz."}
+
+
 # ---------- ADMIN ----------
 @app.get("/api/admin/users", response_model=list[schemas.UserOut])
 def admin_list_users(
@@ -183,6 +212,28 @@ def admin_user_dashboard(
         total_emanet=total_emanet,
         total_profit_loss=total_profit_loss,
     )
+
+
+@app.post("/api/admin/users/{user_id}/reset-password", response_model=schemas.AdminResetPasswordOut)
+def admin_reset_user_password(
+    user_id: int,
+    data: schemas.AdminResetPassword,
+    db: Session = Depends(get_db),
+    current_admin: models.User = Depends(get_current_admin),
+):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+    alphabet = string.ascii_letters + string.digits
+    temp_password = "".join(secrets.choice(alphabet) for _ in range(12))
+    user.hashed_password = hash_password(temp_password)
+    user.password_reset_token = None
+    user.password_reset_expiry = None
+    db.commit()
+    db.refresh(user)
+    if data.send_email:
+        email_service.send_password_reset_email(user.email, temp_password, "")
+    return schemas.AdminResetPasswordOut(temporary_password=temp_password, user=user)
 
 
 # ---------- CUSTOMERS ----------

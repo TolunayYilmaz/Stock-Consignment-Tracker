@@ -15,6 +15,8 @@ class User(Base):
     is_verified = Column(Boolean, default=False, nullable=False)
     is_approved = Column(Boolean, default=False, nullable=False)
     verification_token = Column(String, nullable=True)
+    password_reset_token = Column(String, nullable=True)
+    password_reset_expiry = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

@@ -75,6 +75,11 @@ export default function Login() {
               Giriş Yap
             </button>
           </form>
+          <p className="mt-3 text-center text-sm">
+            <Link to="/forgot-password" className="font-semibold text-green-700 hover:underline">
+              Şifremi Unuttum
+            </Link>
+          </p>
           <p className="mt-5 text-center text-sm text-stone-500">
             Hesabın yok mu?{' '}
             <Link to="/register" className="font-semibold text-green-700 hover:underline">

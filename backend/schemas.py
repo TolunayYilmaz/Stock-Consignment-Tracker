@@ -30,6 +30,24 @@ class Token(BaseModel):
     token_type: str = "bearer"
 
 
+class ForgotPassword(BaseModel):
+    email: EmailStr
+
+
+class ResetPassword(BaseModel):
+    token: str
+    new_password: str
+
+
+class AdminResetPassword(BaseModel):
+    send_email: bool = False
+
+
+class AdminResetPasswordOut(BaseModel):
+    temporary_password: str
+    user: UserOut
+
+
 class CustomerCreate(BaseModel):
     name: str
 

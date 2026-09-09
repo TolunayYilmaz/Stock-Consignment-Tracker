@@ -31,6 +31,13 @@ def ensure_schema():
         conn.execute(
             text("ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR")
         )
+        # Şifre sıfırlama token'ı ve son kullanma tarihi
+        conn.execute(
+            text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR")
+        )
+        conn.execute(
+            text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expiry TIMESTAMP")
+        )
         # Sistem hesabı dışarıda kilitli kalmasın (çok-tenant güvenlik baypası)
         conn.execute(
             text(
