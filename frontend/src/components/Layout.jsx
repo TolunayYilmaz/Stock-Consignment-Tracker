@@ -14,7 +14,7 @@ import {
 import { logout } from '../store/slices/authSlice'
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/', label: 'Ana Sayfa', icon: LayoutDashboard, end: true },
   { to: '/customers', label: 'Müşteriler', icon: Users, end: false },
   { to: '/transactions', label: 'İşlemler', icon: ArrowLeftRight, end: false },
   { to: '/sales', label: 'Satışlar', icon: ShoppingCart, end: false },

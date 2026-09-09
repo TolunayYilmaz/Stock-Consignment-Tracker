@@ -72,7 +72,7 @@ def send_verification_email(to_email: str, token: str, base_url: str = "http://l
     import resend
 
     resend.api_key = RESEND_API_KEY
-    verify_link = f"{base_url.rstrip('/')}/api/verify-email?token={token}"
+    verify_link = f"{base_url.rstrip('/')}/verify-email?token={token}"
     try:
         resend.Emails.send(
             {
