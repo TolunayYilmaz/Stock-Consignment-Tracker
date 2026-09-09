@@ -167,17 +167,17 @@ export default function Customers() {
                       <Trash2 size={18} />
                     </button>
                   </div>
-                  <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                  <div className="flex flex-col">
                     {products.map((p) => {
                       const v = c.balances?.[p] ?? 0
                       return (
-                        <div key={p} className="flex items-center justify-between gap-2">
-                          <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">{p}</dt>
-                          <dd className={`text-sm font-medium ${v > 0 ? 'text-green-700' : 'text-stone-400'}`}>{fmt(v)} ton</dd>
+                        <div key={p} className="flex items-center justify-between border-b border-stone-100 py-2 last:border-0">
+                          <span className="text-sm text-stone-500">{p}</span>
+                          <span className={`whitespace-nowrap text-sm font-semibold ${v > 0 ? 'text-green-700' : 'text-stone-400'}`}>{fmt(v)} ton</span>
                         </div>
                       )
                     })}
-                  </dl>
+                  </div>
                 </div>
               ))}
             </div>

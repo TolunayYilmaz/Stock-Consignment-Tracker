@@ -264,15 +264,15 @@ export default function Sales() {
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Miktar</dt>
-                      <dd className="text-sm font-medium text-stone-700">{s.quantity.toLocaleString('tr-TR')} ton</dd>
+                      <dd className="whitespace-nowrap text-sm font-medium text-stone-700">{s.quantity.toLocaleString('tr-TR')} ton</dd>
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Fiyat</dt>
-                      <dd className="text-sm font-medium text-stone-700">{s.price.toLocaleString('tr-TR')} ₺/kg</dd>
+                      <dd className="whitespace-nowrap text-sm font-medium text-stone-700">{s.price.toLocaleString('tr-TR')} ₺/kg</dd>
                     </div>
                     <div className="col-span-2 flex items-center justify-between gap-2 border-t border-stone-50 pt-2">
                       <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Tutar</dt>
-                      <dd className="text-sm font-bold text-green-700">{(s.quantity * s.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺</dd>
+                      <dd className="whitespace-nowrap text-sm font-bold text-green-700">{(s.quantity * s.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺</dd>
                     </div>
                   </dl>
                 </div>
