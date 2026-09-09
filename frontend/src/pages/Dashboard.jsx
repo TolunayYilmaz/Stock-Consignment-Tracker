@@ -29,26 +29,30 @@ const TYPE_EMANET = 'Emanet'
 const TYPE_EMANETTEN_ALIS = 'Emanetten Alış'
 
 const YEAR_OPTIONS = [
-  { value: 'all', label: 'Tümü' },
-  { value: 2026, label: '2026' },
-  { value: 2025, label: '2025' },
-  { value: 2024, label: '2024' },
+  { value: 'all', label: 'Tümü (Kümülatif)' },
+  { value: 2026, label: '2026-2027 Sezonu' },
+  { value: 2025, label: '2025-2026 Sezonu' },
+  { value: 2024, label: '2024-2025 Sezonu' },
 ]
 
-// Backend services.get_dashboard ile birebir ayni formuller, yila gore filtrelenmis.
-// Filtre mantigi: secili yil "Tumu" degilse kayitlarin yili tam olarak eslesmeli.
+// Tarımsal sezon kontrolü: Tarih 1 Temmuz startDate - 30 Haziran (startDate+1) aralığında mı?
+function isInSeason(dateStr, startDate) {
+  const d = new Date(dateStr)
+  const seasonStart = new Date(startDate, 6, 1)
+  const seasonEnd = new Date(startDate + 1, 5, 30, 23, 59, 59)
+  return d >= seasonStart && d <= seasonEnd
+}
+
+// Tarımsal sezon mantığına göre ürün bazlı hesaplama.
+// Fiziksel Stok, Emanet Bakiyesi, Ort. Alış: Kümülatif (tüm yıllar)
+// Satış, Kâr/Zarar, Ciro: Seçilen sezon (Temmuz-Haziran)
 function computeYearRows(transactions, sales, year) {
   const isAll = year === 'all'
   const targetYear = !isAll ? parseInt(year, 10) : null
-  const txns = isAll
-    ? transactions
-    : transactions.filter((t) => new Date(t.date).getFullYear() === targetYear)
-  const sls = isAll
-    ? sales
-    : sales.filter((s) => new Date(s.date).getFullYear() === targetYear)
 
+  // ── Kümülatif: Tüm işlemler (fiziksel stok + emanet + avg_buy için) ──
   const txnAgg = {}
-  for (const t of txns) {
+  for (const t of transactions) {
     const key = `${t.product_name}||${t.type}`
     const qty = safeNum(t.quantity)
     const amount = qty * safeNum(t.price)
@@ -57,6 +61,11 @@ function computeYearRows(transactions, sales, year) {
     cur.amount += amount
     txnAgg[key] = cur
   }
+
+  // ── Sezon-filtreli: Satışlar (kâr/zarar + ciro için) ──
+  const sls = isAll
+    ? sales
+    : sales.filter((s) => isInSeason(s.date, targetYear))
 
   const saleAgg = {}
   for (const s of sls) {
@@ -80,8 +89,10 @@ function computeYearRows(transactions, sales, year) {
     const emanet_balance = emanet_qty - safeNum(boughtE.qty)
 
     const sold = saleAgg[product] || { qty: 0, amount: 0 }
-    const total_bought = bought_quantity + emanet_qty
-    const physical_stock = total_bought - safeNum(sold.qty)
+
+    // FIX: Emanetten Alış mülkiyet devridir, depoya yeni mal girmez.
+    // Fiziksel Stok = Normal Alış + Emanet - Satışlar
+    const physical_stock = (safeNum(boughtN.qty) + emanet_qty) - safeNum(sold.qty)
 
     const avg_buy = bought_quantity ? bought_amount / bought_quantity : 0
     const avg_sell = safeNum(sold.qty) ? safeNum(sold.amount) / safeNum(sold.qty) : 0
@@ -103,20 +114,29 @@ function computeYearRows(transactions, sales, year) {
   })
 }
 
-// Her yil icin toplam kar/zarari hesaplar; yillar artan sirada siralanir.
+// Her tarımsal sezon için toplam kâr/zararı hesaplar; sezon başlangıç yılları artan sırada.
 function computeYearlyProfit(transactions, sales) {
   const years = new Set()
   for (const t of transactions) years.add(new Date(t.date).getFullYear())
   for (const s of sales) years.add(new Date(s.date).getFullYear())
-  return [...years]
-    .sort((a, b) => a - b)
-    .map((year) => {
-      const rows = computeYearRows(transactions, sales, year)
-      return {
-        label: String(year),
-        value: rows.reduce((sum, r) => sum + safeNum(r.profit_loss), 0),
-      }
-    })
+  if (years.size === 0) return []
+
+  const sortedYears = [...years].sort((a, b) => a - b)
+  const minYear = sortedYears[0]
+  const maxYear = sortedYears[sortedYears.length - 1]
+
+  const seasons = []
+  for (let y = minYear; y <= maxYear; y++) {
+    seasons.push(y)
+  }
+
+  return seasons.map((year) => {
+    const rows = computeYearRows(transactions, sales, year)
+    return {
+      label: `${year}-${year + 1}`,
+      value: rows.reduce((sum, r) => sum + safeNum(r.profit_loss), 0),
+    }
+  })
 }
 
 function BarChart({ data }) {
@@ -336,7 +356,7 @@ export default function Dashboard() {
         right={
           <>
             <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Yıl</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Sezon</span>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}

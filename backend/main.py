@@ -7,7 +7,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from fastapi import FastAPI, Depends, HTTPException, Request
+from typing import Optional
+from fastapi import FastAPI, Depends, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -251,13 +252,14 @@ def admin_user_dashboard(
     user_id: int,
     db: Session = Depends(get_db),
     current_admin: models.User = Depends(get_current_admin),
+    year: Optional[int] = Query(None, description="Tarımsal sezon başlangıç yılı"),
 ):
     """Belirli bir kullanıcının stok, ürün tipi ve işlem özetlerini döner. Read-only (SaaS, admin)."""
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
 
-    rows = services.get_dashboard(db, user.id)
+    rows = services.get_dashboard(db, user.id, year=year)
 
     total_physical_stock = round(sum(r["physical_stock"] for r in rows), 3)
     total_emanet = round(sum(r["emanet_balance"] for r in rows), 3)
@@ -462,5 +464,10 @@ def delete_sale(
 # ---------- DASHBOARD ----------
 @app.get("/api/dashboard", response_model=list[schemas.DashboardRow])
 @limiter.limit("60/minute")
-def dashboard(request: Request, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    return services.get_dashboard(db, current_user.id)
+def dashboard(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+    year: Optional[int] = Query(None, description="Tarımsal sezon başlangıç yılı (Örn: 2025 → Tem 2025 - Haz 2026). None = Tümü (kümülatif)"),
+):
+    return services.get_dashboard(db, current_user.id, year=year)

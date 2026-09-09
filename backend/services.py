@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -66,9 +67,21 @@ def all_emanet_balances(db: Session, user_id: int) -> dict:
     return balances
 
 
-def get_dashboard(db: Session, user_id: int):
-    """Ürün bazlı özet ve kâr/zarar hesaplama (tek tek sorgular yerine toplu gruplama)."""
-    # 1) Tüm işlemler tek sorguda ürün + tip bazında gruplanır
+def _season_dates(year: int):
+    """Tarımsal sezon tarih aralığını döner: 1 Temmuz - 30 Haziran."""
+    return datetime(year, 7, 1), datetime(year + 1, 6, 30, 23, 59, 59)
+
+
+def get_dashboard(db: Session, user_id: int, year: int = None):
+    """Ürün bazlı özet ve kâr/zarar hesaplama.
+
+    Tarımsal sezon mantığı:
+    - year=None (Tümü): Tüm veriler cumulative olarak kullanılır.
+    - year belirtildiğinde:
+      - Fiziksel Stok, Emanet Bakiyesi, Ort. Alış Maliyeti: Kümülatif (tüm yıllar)
+      - Satış, Ciro, Kâr/Zarar: Sadece seçilen sezon (Temmuz-Haziran)
+    """
+    # ── Kümülatif: Tüm yıllar ──────────────────────────────────────────
     txn_rows = db.execute(
         select(
             models.Transaction.product_name,
@@ -80,21 +93,36 @@ def get_dashboard(db: Session, user_id: int):
         .group_by(models.Transaction.product_name, models.Transaction.type)
     ).all()
 
-    # (product, type) -> (qty, amount)
     txn_agg = {}
     for product, txn_type, qty, amount in txn_rows:
         txn_agg[(product, txn_type)] = (qty or 0.0, amount or 0.0)
 
-    # 2) Tüm satışlar tek sorguda ürün bazında gruplanır
-    sale_rows = db.execute(
-        select(
-            models.Sale.product_name,
-            func.sum(models.Sale.quantity),
-            func.sum(models.Sale.quantity * models.Sale.price),
-        )
-        .where(models.Sale.user_id == user_id)
-        .group_by(models.Sale.product_name)
-    ).all()
+    # ── Sezon-filtreli: Satışlar ────────────────────────────────────────
+    if year is not None:
+        season_start, season_end = _season_dates(year)
+        sale_rows = db.execute(
+            select(
+                models.Sale.product_name,
+                func.sum(models.Sale.quantity),
+                func.sum(models.Sale.quantity * models.Sale.price),
+            )
+            .where(
+                models.Sale.user_id == user_id,
+                models.Sale.date >= season_start,
+                models.Sale.date <= season_end,
+            )
+            .group_by(models.Sale.product_name)
+        ).all()
+    else:
+        sale_rows = db.execute(
+            select(
+                models.Sale.product_name,
+                func.sum(models.Sale.quantity),
+                func.sum(models.Sale.quantity * models.Sale.price),
+            )
+            .where(models.Sale.user_id == user_id)
+            .group_by(models.Sale.product_name)
+        ).all()
 
     sale_agg = {product: (qty or 0.0, amount or 0.0) for product, qty, amount in sale_rows}
 
@@ -102,28 +130,29 @@ def get_dashboard(db: Session, user_id: int):
 
     rows = []
     for product in PRODUCTS:
-        # Normal Alış + Emanetten Alış (satın alınan)
+        # Kümülatif: Normal Alış (tüm yıllar)
         bought_qty_n, bought_amt_n = get(product, TYPE_NORMAL)
-        bought_qty_e, bought_amt_e = get(product, TYPE_EMANETTEN_ALIS)
-        bought_quantity = bought_qty_n + bought_qty_e
-        bought_amount = bought_amt_n + bought_amt_e
 
-        # Emanet - Emanetten Alış (emanet balansı)
+        # Kümülatif: Emanetten Alış bakiyesi
         emanet_qty, _ = get(product, TYPE_EMANET)
         emanetten_alis_qty, _ = get(product, TYPE_EMANETTEN_ALIS)
         emanet_balance = emanet_qty - emanetten_alis_qty
 
-        # Güncel fiziksel depo stoğu: (tüm alışlar + tüm emanet) - tüm satışlar
-        total_bought = bought_quantity + emanet_qty
-        sold_quantity, sold_amount = sale_agg.get(product, (0.0, 0.0))
-        physical_stock = total_bought - sold_quantity
+        # Kümülatif: Fiziksel depo stoğu
+        # FIX: Emanetten Alış mülkiyet devridir, depoya yeni mal girmez.
+        # Fiziksel Stok = Normal Alış + Emanet - Satışlar
+        physical_stock = (bought_qty_n + emanet_qty) - sale_agg.get(product, (0.0, 0.0))[0]
 
-        # Ortalama alış fiyatı (SADECE satın alınanlar: normal + emanetten alış)
+        # Kümülatif: Ortalama alış fiyatı (Normal + Emanetten Alış)
+        bought_quantity = bought_qty_n + emanetten_alis_qty
+        bought_amount = bought_amt_n + get(product, TYPE_EMANETTEN_ALIS)[1]
         avg_buy = bought_amount / bought_quantity if bought_quantity else 0.0
+
+        # Sezon-filtreli: Satış verileri
+        sold_quantity, sold_amount = sale_agg.get(product, (0.0, 0.0))
         avg_sell = sold_amount / sold_quantity if sold_quantity else 0.0
 
-        # Kâr/zarar = Satış Geliri - (Satılan Miktar * Ortalama Alış Maliyeti)
-        # (ort satış - ort alış) * satılan ile matematiksel olarak aynıdır
+        # Kâr/zarar = Satış Geliri - (Satılan Miktar * Kümülatif Ort. Alış)
         profit_loss = sold_amount - sold_quantity * avg_buy
 
         rows.append(

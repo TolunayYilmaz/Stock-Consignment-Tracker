@@ -39,6 +39,13 @@ export default function Transactions() {
 
   const YEAR_OPTIONS = ['Tümü', '2026', '2025', '2024']
 
+function isInSeason(dateStr, startDate) {
+  const d = new Date(dateStr)
+  const seasonStart = new Date(startDate, 6, 1)
+  const seasonEnd = new Date(startDate + 1, 5, 30, 23, 59, 59)
+  return d >= seasonStart && d <= seasonEnd
+}
+
   useEffect(() => {
     dispatch(fetchCustomers())
     dispatch(fetchTransactions())
@@ -71,7 +78,7 @@ export default function Transactions() {
       const matchesName =
         !q || (t.customer_name || '').toLowerCase().includes(q)
       const matchesYear =
-        selectedYear === 'Tümü' || new Date(t.date).getFullYear() === parseInt(selectedYear, 10)
+        selectedYear === 'Tümü' || isInSeason(t.date, parseInt(selectedYear, 10))
       return matchesName && matchesYear
     })
   }, [transactions, searchQuery, selectedYear])
@@ -173,16 +180,16 @@ export default function Transactions() {
           />
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
-          <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Yıl</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Sezon</span>
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
             className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
-            aria-label="Yıl seçimi"
+            aria-label="Sezon seçimi"
           >
             {YEAR_OPTIONS.map((y) => (
               <option key={y} value={y}>
-                {y}
+                {y === 'Tümü' ? 'Tümü (Kümülatif)' : `${y}-${parseInt(y, 10) + 1} Sezonu`}
               </option>
             ))}
           </select>
