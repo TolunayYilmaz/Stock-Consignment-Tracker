@@ -10,21 +10,16 @@ import { addSale, deleteSale, fetchSales } from '../store/slices/salesSlice'
 import { PRODUCTS } from '../api/constants'
 import { getSeasonYearOptions } from '../utils/getSeasonYearOptions'
 
+const YEAR_OPTIONS = getSeasonYearOptions()
+const DEFAULT_HARVEST_YEAR = new Date().getFullYear()
+
 const emptyForm = {
   customer_name: '',
   product_name: PRODUCTS[0],
   quantity: '',
   price: '',
   date: '',
-}
-
-const YEAR_OPTIONS = getSeasonYearOptions()
-
-function isInSeason(dateStr, startDate) {
-  const d = new Date(dateStr)
-  const seasonStart = new Date(startDate, 6, 1)
-  const seasonEnd = new Date(startDate + 1, 5, 30, 23, 59, 59)
-  return d >= seasonStart && d <= seasonEnd
+  harvest_year: DEFAULT_HARVEST_YEAR,
 }
 
 export default function Sales() {
@@ -53,7 +48,7 @@ export default function Sales() {
     setSubmitting(true)
     try {
       await dispatch(addSale(form)).unwrap()
-      setForm(emptyForm)
+      setForm({ ...emptyForm, harvest_year: DEFAULT_HARVEST_YEAR })
     } catch (err) {
       setFormError(err.response?.data?.detail || 'Satış kaydedilemedi')
     } finally {
@@ -67,7 +62,7 @@ export default function Sales() {
       const matchesName =
         !q || (s.customer_name || '').toLowerCase().includes(q)
       const matchesYear =
-        selectedYear === 'all' || isInSeason(s.date, parseInt(selectedYear, 10))
+        selectedYear === 'all' || s.harvest_year === parseInt(selectedYear, 10)
       return matchesName && matchesYear
     })
   }, [sales, searchQuery, selectedYear])
@@ -125,6 +120,16 @@ export default function Sales() {
           </select>
         </div>
         <div>
+          <label className="label">Hasat Yılı</label>
+          <select name="harvest_year" value={form.harvest_year} onChange={onChange} className="input-field">
+            {YEAR_OPTIONS.filter((o) => o.value !== 'all').map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
           <label className="label">Miktar (ton)</label>
           <input type="number" step="any" min="0" name="quantity" value={form.quantity} onChange={onChange} required className="input-field" />
         </div>
@@ -168,12 +173,12 @@ export default function Sales() {
           />
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
-          <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Sezon</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Hasat Yılı</span>
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
             className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
-            aria-label="Sezon seçimi"
+            aria-label="Hasat yılı seçimi"
           >
             {YEAR_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -198,6 +203,7 @@ export default function Sales() {
                     <th className="th">Tarih</th>
                     <th className="th">Müşteri</th>
                     <th className="th">Ürün</th>
+                    <th className="th">Hasat Yılı</th>
                     <th className="th">Miktar (ton)</th>
                     <th className="th">Fiyat (₺/kg)</th>
                     <th className="th">Tutar</th>
@@ -212,6 +218,7 @@ export default function Sales() {
                       <td className="td">
                         <ProductBadge product={s.product_name} />
                       </td>
+                      <td className="td font-medium text-stone-600">{s.harvest_year || '-'}</td>
                       <td className="td">{s.quantity.toLocaleString('tr-TR')}</td>
                       <td className="td">{s.price.toLocaleString('tr-TR')}</td>
                       <td className="td font-medium">{(s.quantity * s.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}</td>
@@ -257,6 +264,10 @@ export default function Sales() {
                     <div className="flex items-center justify-between py-2 border-b border-stone-50">
                       <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Tarih</span>
                       <span className="whitespace-nowrap text-sm font-medium text-stone-800 text-right">{new Date(s.date).toLocaleDateString('tr-TR')}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Hasat Yılı</span>
+                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 text-right">{s.harvest_year || '-'}</span>
                     </div>
                     <div className="flex items-center justify-between py-2 border-b border-stone-50">
                       <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Ürün</span>

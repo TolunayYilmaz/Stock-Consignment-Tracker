@@ -45,6 +45,7 @@ class Transaction(Base):
     quantity = Column(Float, nullable=False)
     price = Column(Float, nullable=False, default=0)
     date = Column(DateTime, default=datetime.utcnow)
+    harvest_year = Column(Integer, nullable=True)
 
     customer = relationship("Customer", back_populates="transactions")
 
@@ -59,3 +60,4 @@ class Sale(Base):
     quantity = Column(Float, nullable=False)
     price = Column(Float, nullable=False)
     date = Column(DateTime, default=datetime.utcnow)
+    harvest_year = Column(Integer, nullable=True)

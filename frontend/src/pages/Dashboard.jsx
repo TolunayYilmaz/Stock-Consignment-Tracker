@@ -31,32 +31,13 @@ const TYPE_EMANETTEN_ALIS = 'Emanetten Alış'
 
 const YEAR_OPTIONS = getSeasonYearOptions()
 
-// Tarımsal sezon kontrolü: Tarih 1 Temmuz startDate - 30 Haziran (startDate+1) aralığında mı?
-function isInSeason(dateStr, startDate) {
-  const d = new Date(dateStr)
-  const seasonStart = new Date(startDate, 6, 1)
-  const seasonEnd = new Date(startDate + 1, 5, 30, 23, 59, 59)
-  return d >= seasonStart && d <= seasonEnd
-}
-
-// Tavan tarih kontrolü: Tarih sezon sonundan önce veya o gün mü?
-function isBeforeOrAtSeasonEnd(dateStr, startDate) {
-  const d = new Date(dateStr)
-  const seasonEnd = new Date(startDate + 1, 5, 30, 23, 59, 59)
-  return d <= seasonEnd
-}
-
-// Tarımsal sezon mantığına göre ürün bazlı hesaplama.
-// Kümülatif (Stok, Emanet, Alınan, Maliyet): zamanın başlangıcından sezon sonuna kadar
-// Satış, Kâr/Zarar, Ciro: Sadece seçilen sezon (Temmuz-Haziran)
 function computeYearRows(transactions, sales, year) {
   const isAll = year === 'all'
   const targetYear = !isAll ? parseInt(year, 10) : null
 
-  // ── Kümülatif: sezon sonuna kadar olan işlemler (ceiling date) ───────
   const txnAgg = {}
   for (const t of transactions) {
-    if (!isAll && !isBeforeOrAtSeasonEnd(t.date, targetYear)) continue
+    if (!isAll && t.harvest_year !== targetYear) continue
     const key = `${t.product_name}||${t.type}`
     const qty = safeNum(t.quantity)
     const amount = qty * safeNum(t.price)
@@ -66,10 +47,9 @@ function computeYearRows(transactions, sales, year) {
     txnAgg[key] = cur
   }
 
-  // ── Sezon-filtreli: Satışlar (kâr/zarar + ciro için) ──────────────
   const sls = isAll
     ? sales
-    : sales.filter((s) => isInSeason(s.date, targetYear))
+    : sales.filter((s) => s.harvest_year === targetYear)
 
   const saleAgg = {}
   for (const s of sls) {
@@ -94,7 +74,6 @@ function computeYearRows(transactions, sales, year) {
 
     const sold = saleAgg[product] || { qty: 0, amount: 0 }
 
-    // Fiziksel Stok = Normal Alış + Emanet - Satışlar (ceiling date'e kadar)
     const physical_stock = (safeNum(boughtN.qty) + emanet_qty) - safeNum(sold.qty)
 
     const avg_buy = bought_quantity ? bought_amount / bought_quantity : 0
@@ -117,26 +96,18 @@ function computeYearRows(transactions, sales, year) {
   })
 }
 
-// Her tarımsal sezon için toplam kâr/zararı hesaplar; sezon başlangıç yılları artan sırada.
 function computeYearlyProfit(transactions, sales) {
   const years = new Set()
-  for (const t of transactions) years.add(new Date(t.date).getFullYear())
-  for (const s of sales) years.add(new Date(s.date).getFullYear())
+  for (const t of transactions) if (t.harvest_year) years.add(t.harvest_year)
+  for (const s of sales) if (s.harvest_year) years.add(s.harvest_year)
   if (years.size === 0) return []
 
   const sortedYears = [...years].sort((a, b) => a - b)
-  const minYear = sortedYears[0]
-  const maxYear = sortedYears[sortedYears.length - 1]
 
-  const seasons = []
-  for (let y = minYear; y <= maxYear; y++) {
-    seasons.push(y)
-  }
-
-  return seasons.map((year) => {
+  return sortedYears.map((year) => {
     const rows = computeYearRows(transactions, sales, year)
     return {
-      label: `${year}-${year + 1}`,
+      label: String(year),
       value: rows.reduce((sum, r) => sum + safeNum(r.profit_loss), 0),
     }
   })
@@ -264,6 +235,10 @@ export default function Dashboard() {
     dispatch(fetchSales())
   }, [dispatch])
 
+  useEffect(() => {
+    dispatch(fetchDashboard({ year: selectedYear, force: true, silent: true }))
+  }, [selectedYear, dispatch])
+
   const handleExport = async () => {
     setExporting(true)
     setExportError('')
@@ -288,7 +263,6 @@ export default function Dashboard() {
     }
   }
 
-  // Hesaplamalar seçili yıla bağlı: "Tümü" seçilince tüm veriler üzerinden çalışır.
   const yearRows = useMemo(
     () => computeYearRows(transactions, sales, selectedYear),
     [transactions, sales, selectedYear]
@@ -359,12 +333,12 @@ export default function Dashboard() {
         right={
           <>
             <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Sezon</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Hasat Yılı</span>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
                 className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
-                aria-label="Yıl seçimi"
+                aria-label="Hasat yılı seçimi"
               >
                 {YEAR_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>

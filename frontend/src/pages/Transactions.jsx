@@ -16,6 +16,9 @@ const typeCls = {
   'Normal Alış': 'bg-green-100 text-green-700',
 }
 
+const YEAR_OPTIONS = getSeasonYearOptions()
+const DEFAULT_HARVEST_YEAR = new Date().getFullYear()
+
 const emptyForm = {
   customer_id: '',
   type: 'Emanet',
@@ -23,6 +26,7 @@ const emptyForm = {
   quantity: '',
   price: '',
   date: '',
+  harvest_year: DEFAULT_HARVEST_YEAR,
 }
 
 export default function Transactions() {
@@ -38,15 +42,6 @@ export default function Transactions() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedYear, setSelectedYear] = useState('all')
 
-  const YEAR_OPTIONS = getSeasonYearOptions()
-
-function isInSeason(dateStr, startDate) {
-  const d = new Date(dateStr)
-  const seasonStart = new Date(startDate, 6, 1)
-  const seasonEnd = new Date(startDate + 1, 5, 30, 23, 59, 59)
-  return d >= seasonStart && d <= seasonEnd
-}
-
   useEffect(() => {
     dispatch(fetchCustomers())
     dispatch(fetchTransactions())
@@ -60,7 +55,7 @@ function isInSeason(dateStr, startDate) {
     setSubmitting(true)
     try {
       await dispatch(addTransaction(form)).unwrap()
-      setForm(emptyForm)
+      setForm({ ...emptyForm, harvest_year: DEFAULT_HARVEST_YEAR })
     } catch (err) {
       setFormError(err.response?.data?.detail || 'İşlem kaydedilemedi')
     } finally {
@@ -79,7 +74,7 @@ function isInSeason(dateStr, startDate) {
       const matchesName =
         !q || (t.customer_name || '').toLowerCase().includes(q)
       const matchesYear =
-        selectedYear === 'all' || isInSeason(t.date, parseInt(selectedYear, 10))
+        selectedYear === 'all' || t.harvest_year === parseInt(selectedYear, 10)
       return matchesName && matchesYear
     })
   }, [transactions, searchQuery, selectedYear])
@@ -135,6 +130,16 @@ function isInSeason(dateStr, startDate) {
           </select>
         </div>
         <div>
+          <label className="label">Hasat Yılı</label>
+          <select name="harvest_year" value={form.harvest_year} onChange={onChange} className="input-field">
+            {YEAR_OPTIONS.filter((o) => o.value !== 'all').map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
           <label className="label">Miktar (ton)</label>
           <input type="number" step="any" min="0" name="quantity" value={form.quantity} onChange={onChange} required className="input-field" />
         </div>
@@ -181,12 +186,12 @@ function isInSeason(dateStr, startDate) {
           />
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
-          <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Sezon</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Hasat Yılı</span>
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
             className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
-            aria-label="Sezon seçimi"
+            aria-label="Hasat yılı seçimi"
           >
             {YEAR_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -212,6 +217,7 @@ function isInSeason(dateStr, startDate) {
                     <th className="th">Müşteri</th>
                     <th className="th">İşlem</th>
                     <th className="th">Ürün</th>
+                    <th className="th">Hasat Yılı</th>
                     <th className="th">Miktar (ton)</th>
                     <th className="th">Fiyat (₺/kg)</th>
                     <th className="th">Tutar</th>
@@ -231,9 +237,10 @@ function isInSeason(dateStr, startDate) {
                       <td className="td">
                         <ProductBadge product={t.product_name} />
                       </td>
+                      <td className="td font-medium text-stone-600">{t.harvest_year || '-'}</td>
                       <td className="td">{t.quantity.toLocaleString('tr-TR')}</td>
                       <td className="td">{t.price.toLocaleString('tr-TR')}</td>
-                      <td className="td font-medium">{totalZarar >= 0 && (t.quantity * t.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}</td>
+                      <td className="td font-medium">{(t.quantity * t.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}</td>
                       <td className="td">
                         <div className="flex justify-end">
                           <button
@@ -281,6 +288,10 @@ function isInSeason(dateStr, startDate) {
                     <div className="flex items-center justify-between py-2 border-b border-stone-50">
                       <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Tarih</span>
                       <span className="whitespace-nowrap text-sm font-medium text-stone-800 text-right">{new Date(t.date).toLocaleDateString('tr-TR')}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Hasat Yılı</span>
+                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 text-right">{t.harvest_year || '-'}</span>
                     </div>
                     <div className="flex items-center justify-between py-2 border-b border-stone-50">
                       <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Ürün</span>

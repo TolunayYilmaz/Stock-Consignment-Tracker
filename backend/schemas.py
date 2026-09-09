@@ -95,6 +95,7 @@ class TransactionCreate(BaseModel):
     quantity: float
     price: Optional[float] = 0
     date: Optional[datetime] = None
+    harvest_year: Optional[int] = None
 
 
 class TransactionOut(BaseModel):
@@ -106,6 +107,7 @@ class TransactionOut(BaseModel):
     quantity: float
     price: float
     date: datetime
+    harvest_year: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -117,6 +119,7 @@ class SaleCreate(BaseModel):
     quantity: float
     price: float
     date: Optional[datetime] = None
+    harvest_year: Optional[int] = None
 
 
 class SaleOut(BaseModel):
@@ -126,6 +129,7 @@ class SaleOut(BaseModel):
     quantity: float
     price: float
     date: datetime
+    harvest_year: Optional[int] = None
 
     class Config:
         from_attributes = True

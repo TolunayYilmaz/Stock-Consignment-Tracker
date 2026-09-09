@@ -252,14 +252,14 @@ def admin_user_dashboard(
     user_id: int,
     db: Session = Depends(get_db),
     current_admin: models.User = Depends(get_current_admin),
-    year: Optional[int] = Query(None, description="Tarımsal sezon başlangıç yılı"),
+    year: Optional[int] = Query(None, description="Hasat yılı (Örn: 2025). None = Tümü"),
 ):
     """Belirli bir kullanıcının stok, ürün tipi ve işlem özetlerini döner. Read-only (SaaS, admin)."""
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
 
-    rows = services.get_dashboard(db, user.id, year=year)
+    rows = services.get_dashboard(db, user.id, harvest_year=year)
 
     total_physical_stock = round(sum(r["physical_stock"] for r in rows), 3)
     total_emanet = round(sum(r["emanet_balance"] for r in rows), 3)
@@ -389,6 +389,11 @@ def create_transaction(data: schemas.TransactionCreate, db: Session = Depends(ge
     )
     if not customer:
         raise HTTPException(status_code=400, detail="Müşteri bulunamadı")
+    if data.harvest_year is None and data.date is not None:
+        data.harvest_year = data.date.year
+    elif data.harvest_year is None:
+        from datetime import datetime as _dt
+        data.harvest_year = _dt.utcnow().year
     txn = services.create_transaction(db, data, current_user.id)
     out = schemas.TransactionOut.from_orm(txn)
     out.customer_name = customer.name
@@ -428,6 +433,10 @@ def list_sales(request: Request, db: Session = Depends(get_db), current_user: mo
 
 @app.post("/api/sales", response_model=schemas.SaleOut)
 def create_sale(data: schemas.SaleCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    if data.harvest_year is None and data.date is not None:
+        data.harvest_year = data.date.year
+    elif data.harvest_year is None:
+        data.harvest_year = datetime.utcnow().year
     sale = models.Sale(
         user_id=current_user.id,
         customer_name=data.customer_name,
@@ -435,6 +444,7 @@ def create_sale(data: schemas.SaleCreate, db: Session = Depends(get_db), current
         quantity=data.quantity,
         price=data.price,
         date=data.date or datetime.utcnow(),
+        harvest_year=data.harvest_year,
     )
     db.add(sale)
     db.commit()
@@ -468,6 +478,6 @@ def dashboard(
     request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
-    year: Optional[int] = Query(None, description="Tarımsal sezon başlangıç yılı (Örn: 2025 → Tem 2025 - Haz 2026). None = Tümü (kümülatif)"),
+    year: Optional[int] = Query(None, description="Hasat yılı (Örn: 2025). None = Tümü"),
 ):
-    return services.get_dashboard(db, current_user.id, year=year)
+    return services.get_dashboard(db, current_user.id, harvest_year=year)

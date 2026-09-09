@@ -4,7 +4,12 @@ import { logout } from './authSlice'
 
 export const fetchDashboard = createAsyncThunk(
   'dashboard/fetch',
-  async ({ force, silent } = {}) => (await api.get('/dashboard')).data,
+  async ({ year, force, silent } = {}) => {
+    const params = {}
+    if (year && year !== 'all') params.year = year
+    const res = await api.get('/dashboard', { params })
+    return res.data
+  },
   {
     condition: ({ force } = {}, { getState }) => {
       const state = getState().dashboard

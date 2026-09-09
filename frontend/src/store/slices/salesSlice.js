@@ -18,7 +18,7 @@ export const fetchSales = createAsyncThunk(
 
 export const addSale = createAsyncThunk(
   'sales/add',
-  async ({ customer_name, product_name, quantity, price, date }, { dispatch }) => {
+  async ({ customer_name, product_name, quantity, price, date, harvest_year }, { dispatch }) => {
     const payload = {
       customer_name,
       product_name,
@@ -26,6 +26,7 @@ export const addSale = createAsyncThunk(
       price: parseFloat(price) || 0,
     }
     if (date) payload.date = new Date(date).toISOString()
+    if (harvest_year) payload.harvest_year = Number(harvest_year)
     const res = await api.post('/sales', payload)
     dispatch(salesSlice.actions.appendItem(res.data))
     await dispatch(fetchSales({ force: true, silent: true }))

@@ -72,6 +72,26 @@ def ensure_schema():
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_customers_user_id ON customers(user_id)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transactions_user_id ON transactions(user_id)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_sales_user_id ON sales(user_id)"))
+        # Hasat yılı bazlı filtreleme: harvest_year sütunu
+        conn.execute(text("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS harvest_year INTEGER"))
+        conn.execute(text("ALTER TABLE sales ADD COLUMN IF NOT EXISTS harvest_year INTEGER"))
+        # Mevcut kayıtları tarih yılına göre geriye dönük doldur
+        conn.execute(text(
+            "UPDATE transactions SET harvest_year = EXTRACT(YEAR FROM date)::integer "
+            "WHERE harvest_year IS NULL AND date IS NOT NULL"
+        ))
+        conn.execute(text(
+            "UPDATE sales SET harvest_year = EXTRACT(YEAR FROM date)::integer "
+            "WHERE harvest_year IS NULL AND date IS NOT NULL"
+        ))
+        conn.execute(text(
+            "ALTER TABLE transactions ALTER COLUMN harvest_year SET DEFAULT EXTRACT(YEAR FROM now())::integer"
+        ))
+        conn.execute(text(
+            "ALTER TABLE sales ALTER COLUMN harvest_year SET DEFAULT EXTRACT(YEAR FROM now())::integer"
+        ))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_transactions_harvest_year ON transactions(harvest_year)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_sales_harvest_year ON sales(harvest_year)"))
 
 
 def get_db():
