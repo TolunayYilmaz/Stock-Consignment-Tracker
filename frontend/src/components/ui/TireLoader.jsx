@@ -2,9 +2,9 @@ export default function TireLoader({ className = "w-10 h-10" }) {
   return (
     <svg viewBox="0 0 100 100" className={`animate-spin ${className}`}>
       {/* Traktör Dış Dişleri (Treads) */}
-      <circle cx="50" cy="50" r="42" stroke="#1f2937" strokeWidth="16" strokeDasharray="14 10" fill="none" />
+      <circle cx="50" cy="50" r="42" stroke="#15803d" strokeWidth="16" strokeDasharray="14 10" fill="none" />
       {/* Lastik Gövdesi */}
-      <circle cx="50" cy="50" r="38" fill="#374151" />
+      <circle cx="50" cy="50" r="38" fill="#166534" />
       {/* İç Çelik Jant (Rim) */}
       <circle cx="50" cy="50" r="22" fill="#cbd5e1" />
       {/* Jant Çerçevesi */}
