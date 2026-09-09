@@ -1,4 +1,5 @@
-import { Loader2, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
+import TireLoader from './TireLoader'
 
 export default function ConfirmDialog({ open, title, message, detail, confirming, onCancel, onConfirm }) {
   if (!open) return null
@@ -29,7 +30,7 @@ export default function ConfirmDialog({ open, title, message, detail, confirming
             disabled={confirming}
             className="flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
           >
-            {confirming && <Loader2 className="animate-spin" size={16} />}
+            {confirming && <TireLoader size={16} />}
             Evet, Sil
           </button>
         </div>

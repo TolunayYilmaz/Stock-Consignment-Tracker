@@ -58,7 +58,9 @@ export default function Layout() {
               <Tractor size={20} />
             </span>
             <div className="leading-tight">
-              <p className="text-sm font-bold text-stone-800 sm:text-base">Stok Emanet</p>
+              <p className="text-sm font-bold text-stone-800 sm:text-base">
+                {user?.company_name?.trim() || 'Stok Emanet'}
+              </p>
               <p className="hidden text-[11px] text-stone-400 sm:block">Tarımsal Takip Sistemi</p>
             </div>
           </div>

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
-import { AlertCircle, Loader2, LogIn, Tractor } from 'lucide-react'
+import { AlertCircle, LogIn, Tractor } from 'lucide-react'
 import { login } from '../store/slices/authSlice'
+import TireLoader from '../components/TireLoader'
 
 export default function Login() {
   const dispatch = useDispatch()
@@ -71,7 +72,7 @@ export default function Login() {
               />
             </div>
             <button type="submit" disabled={submitting} className="btn-primary w-full">
-              {submitting ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />}
+              {submitting ? <TireLoader size={16} /> : <LogIn size={16} />}
               Giriş Yap
             </button>
           </form>

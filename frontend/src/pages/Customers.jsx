@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Loader2, Search, Trash2, UserPlus, Users } from 'lucide-react'
+import { Search, Trash2, UserPlus, Users } from 'lucide-react'
+import TireLoader from '../components/TireLoader'
 import PageHeader from '../components/PageHeader'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { addCustomer, deleteCustomer, fetchCustomers } from '../store/slices/customersSlice'
@@ -99,7 +100,7 @@ export default function Customers() {
       <div className="card overflow-x-auto">
         {loading ? (
           <div className="flex items-center justify-center p-10">
-            <Loader2 className="animate-spin text-green-700" />
+            <TireLoader size={24} />
           </div>
         ) : (
           <table className="w-full min-w-[820px] text-sm">

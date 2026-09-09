@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { AlertCircle, CheckCircle2, KeyRound, Loader2, Lock, Tractor } from 'lucide-react'
+import { AlertCircle, CheckCircle2, KeyRound, Lock, Tractor } from 'lucide-react'
 import api from '../api/client'
+import TireLoader from '../components/TireLoader'
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams()
@@ -98,7 +99,7 @@ export default function ResetPassword() {
                 />
               </div>
               <button type="submit" disabled={submitting} className="btn-primary w-full">
-                {submitting ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
+                {submitting ? <TireLoader size={16} /> : <Lock size={16} />}
                 Şifremi Güncelle
               </button>
             </form>

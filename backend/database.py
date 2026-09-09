@@ -31,6 +31,13 @@ def ensure_schema():
         conn.execute(
             text("ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token VARCHAR")
         )
+        # İletişim bilgileri (telefon + opsiyonel şirket adı)
+        conn.execute(
+            text("ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR")
+        )
+        conn.execute(
+            text("ALTER TABLE users ADD COLUMN IF NOT EXISTS company_name VARCHAR")
+        )
         # Şifre sıfırlama token'ı ve son kullanma tarihi
         conn.execute(
             text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR")

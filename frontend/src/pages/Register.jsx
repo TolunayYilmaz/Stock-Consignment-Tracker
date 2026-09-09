@@ -1,12 +1,22 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AlertCircle, CheckCircle2, CheckSquare, FileText, Loader2, LogIn, Tractor, UserPlus, X } from 'lucide-react'
+import { AlertCircle, Building2, CheckCircle2, CheckSquare, FileText, LogIn, Phone, Tractor, UserPlus, X } from 'lucide-react'
 import api from '../api/client'
+import TireLoader from '../components/TireLoader'
+
+const PASSWORD_RULES = [
+  { key: 'length', label: 'En az 8 karakter', test: (v) => v.length >= 8 },
+  { key: 'upper', label: 'En az 1 büyük harf', test: (v) => /[A-Z]/.test(v) },
+  { key: 'digit', label: 'En az 1 rakam', test: (v) => /\d/.test(v) },
+]
 
 export default function Register() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [phone, setPhone] = useState('')
+  const [companyName, setCompanyName] = useState('')
   const [kvkk, setKvkk] = useState(false)
   const [kvkkOpen, setKvkkOpen] = useState(false)
   const [error, setError] = useState('')
@@ -19,11 +29,24 @@ export default function Register() {
       setError('Devam edebilmek için KVKK Aydınlatma Metni\'ni onaylamanız gerekmektedir.')
       return
     }
+    if (password.length < 8 || !/[A-Z]/.test(password) || !/\d/.test(password)) {
+      setError('Şifre en az 8 karakter olmalı, 1 büyük harf ve 1 rakam içermelidir.')
+      return
+    }
+    if (password !== confirmPassword) {
+      setError('Şifreler eşleşmiyor.')
+      return
+    }
     setError('')
     setSuccess('')
     setSubmitting(true)
     try {
-      const res = await api.post('/register', { email: email.trim(), password })
+      const res = await api.post('/register', {
+        email: email.trim(),
+        password,
+        phone: phone.trim() || null,
+        company_name: companyName.trim() || null,
+      })
       if (res.data.is_verified && res.data.is_approved) {
         navigate('/login')
       } else {
@@ -32,7 +55,13 @@ export default function Register() {
         )
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Kayıt başarısız')
+      const detail = err.response?.data?.detail
+      if (Array.isArray(detail)) {
+        const msg = detail.map((d) => d.msg || d.message).filter(Boolean).join(' ')
+        setError(msg || 'Kayıt başarısız')
+      } else {
+        setError(detail || 'Kayıt başarısız')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -86,16 +115,80 @@ export default function Register() {
               />
             </div>
             <div>
-              <label className="label">Şifre (en az 6 karakter)</label>
+              <label className="label">Şirket Adı <span className="font-normal text-stone-400">(opsiyonel)</span></label>
+              <div className="relative">
+                <Building2 size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                <input
+                  type="text"
+                  placeholder="Örn: Yılmaz Tarım A.Ş."
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="input-field pl-10"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="label">Telefon Numarası</label>
+              <div className="relative">
+                <Phone size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                <input
+                  type="tel"
+                  placeholder="05XX XXX XX XX"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="input-field pl-10"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="label">Şifre</label>
               <input
                 type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="input-field"
-                minLength={6}
                 required
               />
+              <div className="mt-2 grid grid-cols-1 gap-1.5">
+                {PASSWORD_RULES.map((rule) => {
+                  const ok = rule.test(password)
+                  const active = password.length > 0
+                  return (
+                    <div
+                      key={rule.key}
+                      className={`flex items-center gap-1.5 text-xs font-medium transition ${
+                        !active ? 'text-stone-400' : ok ? 'text-green-600' : 'text-stone-500'
+                      }`}
+                    >
+                      <span
+                        className={`flex h-4 w-4 items-center justify-center rounded-full border ${
+                          !active ? 'border-stone-300' : ok ? 'border-green-500 bg-green-500 text-white' : 'border-stone-300'
+                        }`}
+                      >
+                        {ok && <CheckCircle2 size={11} />}
+                      </span>
+                      {rule.label}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+            <div>
+              <label className="label">Şifre Tekrarı</label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="input-field"
+                required
+              />
+              {confirmPassword.length > 0 && (
+                <p className={`mt-1.5 text-xs font-medium ${password === confirmPassword ? 'text-green-600' : 'text-red-500'}`}>
+                  {password === confirmPassword ? 'Şifreler eşleşiyor ✓' : 'Şifreler eşleşmiyor'}
+                </p>
+              )}
             </div>
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-3 text-sm transition hover:border-green-300">
               <input
@@ -117,7 +210,7 @@ export default function Register() {
               </span>
             </label>
             <button type="submit" disabled={submitting || !kvkk} className="btn-primary w-full">
-              {submitting ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
+              {submitting ? <TireLoader size={16} /> : <UserPlus size={16} />}
               Kayıt Ol
             </button>
           </form>

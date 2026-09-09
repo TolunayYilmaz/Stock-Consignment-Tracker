@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import { BadgeCheck, CheckCircle2, Clock, Eye, KeyRound, Loader2, ShieldCheck, Trash2, ShieldOff, X } from 'lucide-react'
+import { BadgeCheck, CheckCircle2, Clock, Eye, KeyRound, ShieldCheck, Trash2, ShieldOff, X } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import UserDetailModal from '../components/UserDetailModal'
+import TireLoader from '../components/TireLoader'
 import api from '../api/client'
 
 const fmtDate = (d) => new Date(d).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -82,7 +83,7 @@ export default function Admin() {
       <div className="card overflow-x-auto">
         {loading ? (
           <div className="flex items-center justify-center p-10">
-            <Loader2 className="animate-spin text-green-700" />
+            <TireLoader className="text-green-700" />
           </div>
         ) : (
           <table className="w-full min-w-[920px] text-sm">
@@ -233,7 +234,7 @@ export default function Admin() {
                     disabled={resetting}
                     className="flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:opacity-60"
                   >
-                    {resetting && <Loader2 className="animate-spin" size={16} />}
+                    {resetting && <TireLoader size={16} />}
                     Evet, Sıfırla
                   </button>
                 </div>

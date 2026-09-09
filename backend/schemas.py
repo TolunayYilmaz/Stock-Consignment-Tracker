@@ -1,11 +1,25 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from datetime import datetime
 from typing import Optional
+import re
 
 
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
+    phone: Optional[str] = None
+    company_name: Optional[str] = None
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Şifre en az 8 karakter olmalıdır")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Şifre en az 1 büyük harf içermelidir")
+        if not re.search(r"\d", v):
+            raise ValueError("Şifre en az 1 rakam içermelidir")
+        return v
 
 
 class UserLogin(BaseModel):
@@ -16,6 +30,8 @@ class UserLogin(BaseModel):
 class UserOut(BaseModel):
     id: int
     email: EmailStr
+    phone: Optional[str] = None
+    company_name: Optional[str] = None
     is_admin: bool = False
     is_verified: bool = False
     is_approved: bool = False
