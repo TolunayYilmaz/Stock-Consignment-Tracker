@@ -8,7 +8,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import { fetchCustomers } from '../store/slices/customersSlice'
 import { addTransaction, deleteTransaction, fetchTransactions } from '../store/slices/transactionsSlice'
 import { PRODUCTS, TRANSACTION_TYPES } from '../api/constants'
-import { getSeasonYearOptions } from '../utils/getSeasonYearOptions'
+import { getHarvestYearOptions, getHarvestYearFilterOptions } from '../utils/getHarvestYearOptions'
 
 const typeCls = {
   Emanet: 'bg-amber-100 text-amber-700',
@@ -16,7 +16,8 @@ const typeCls = {
   'Normal Alış': 'bg-green-100 text-green-700',
 }
 
-const YEAR_OPTIONS = getSeasonYearOptions()
+const HARVEST_YEAR_OPTIONS = getHarvestYearOptions()
+const FILTER_YEAR_OPTIONS = getHarvestYearFilterOptions()
 const DEFAULT_HARVEST_YEAR = new Date().getFullYear()
 
 const emptyForm = {
@@ -132,7 +133,7 @@ export default function Transactions() {
         <div>
           <label className="label">Hasat Yılı</label>
           <select name="harvest_year" value={form.harvest_year} onChange={onChange} className="input-field">
-            {YEAR_OPTIONS.filter((o) => o.value !== 'all').map((o) => (
+            {HARVEST_YEAR_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>
@@ -193,7 +194,7 @@ export default function Transactions() {
             className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
             aria-label="Hasat yılı seçimi"
           >
-            {YEAR_OPTIONS.map((o) => (
+            {FILTER_YEAR_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>

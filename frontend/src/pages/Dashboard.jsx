@@ -11,7 +11,7 @@ import { fetchSales } from '../store/slices/salesSlice'
 import { fetchDashboard } from '../store/slices/dashboardSlice'
 import { store } from '../store/store'
 import { exportToExcel } from '../utils/exportExcel'
-import { getSeasonYearOptions } from '../utils/getSeasonYearOptions'
+import { getHarvestYearFilterOptions } from '../utils/getHarvestYearOptions'
 
 const safeNum = (n) => (Number.isFinite(Number(n)) ? Number(n) : 0)
 const fmt = (n, max = 3) => safeNum(n).toLocaleString('tr-TR', { maximumFractionDigits: max })
@@ -29,7 +29,7 @@ const TYPE_NORMAL = 'Normal Alış'
 const TYPE_EMANET = 'Emanet'
 const TYPE_EMANETTEN_ALIS = 'Emanetten Alış'
 
-const YEAR_OPTIONS = getSeasonYearOptions()
+const YEAR_OPTIONS = getHarvestYearFilterOptions()
 
 function computeYearRows(transactions, sales, year) {
   const isAll = year === 'all'
