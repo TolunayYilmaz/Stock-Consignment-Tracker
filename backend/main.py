@@ -9,7 +9,10 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
 
 import email_service
 import models
@@ -25,6 +28,17 @@ from auth import (
     verify_password,
 )
 from database import Base, engine, ensure_schema, get_db
+
+
+def _client_ip(request: Request) -> str:
+    """İstemci IP'sini döner. Vercel gibi proxy/CDN arkasında x-forwarded-for önceliklidir."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+limiter = Limiter(key_func=_client_ip)
 
 
 @asynccontextmanager
@@ -49,6 +63,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.state.limiter = limiter
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Çok fazla istek gönderildi. Lütfen kısa bir süre sonra tekrar deneyin."},
+    )
+
 
 def _txn_out(t: models.Transaction) -> schemas.TransactionOut:
     out = schemas.TransactionOut.from_orm(t)
@@ -59,6 +83,7 @@ def _txn_out(t: models.Transaction) -> schemas.TransactionOut:
 
 # ---------- AUTH ----------
 @app.post("/api/register", response_model=schemas.UserOut)
+@limiter.limit("5/minute")
 def register(user: schemas.UserCreate, request: Request, db: Session = Depends(get_db)):
     if not user.terms_accepted:
         raise HTTPException(
@@ -91,7 +116,8 @@ def register(user: schemas.UserCreate, request: Request, db: Session = Depends(g
 
 
 @app.post("/api/token", response_model=schemas.Token)
-def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(user: schemas.UserLogin, request: Request, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if not db_user or not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Email veya şifre hatalı")
@@ -141,12 +167,14 @@ def verify_email(token: str, db: Session = Depends(get_db)):
 
 
 @app.get("/api/me", response_model=schemas.UserOut)
-def me(current_user: models.User = Depends(get_current_user)):
+@limiter.limit("60/minute")
+def me(request: Request, current_user: models.User = Depends(get_current_user)):
     return current_user
 
 
 # ---------- PASSWORD RESET ----------
 @app.post("/api/auth/forgot-password")
+@limiter.limit("5/minute")
 def forgot_password(data: schemas.ForgotPassword, request: Request, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == data.email).first()
     token = secrets.token_urlsafe(32)
@@ -160,7 +188,8 @@ def forgot_password(data: schemas.ForgotPassword, request: Request, db: Session 
 
 
 @app.post("/api/auth/reset-password")
-def reset_password(data: schemas.ResetPassword, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def reset_password(data: schemas.ResetPassword, request: Request, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.password_reset_token == data.token).first()
     if not user:
         raise HTTPException(status_code=400, detail="Geçersiz veya kullanılmış sıfırlama linki")
@@ -267,7 +296,8 @@ def admin_reset_user_password(
 
 # ---------- CUSTOMERS ----------
 @app.get("/api/customers", response_model=list[schemas.CustomerBalance])
-def list_customers(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+@limiter.limit("60/minute")
+def list_customers(request: Request, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     customers = (
         db.query(models.Customer)
         .filter(models.Customer.user_id == current_user.id)
@@ -334,7 +364,8 @@ def delete_customer(
 
 # ---------- TRANSACTIONS ----------
 @app.get("/api/transactions", response_model=list[schemas.TransactionOut])
-def list_transactions(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+@limiter.limit("60/minute")
+def list_transactions(request: Request, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     txns = (
         db.query(models.Transaction)
         .filter(models.Transaction.user_id == current_user.id)
@@ -383,7 +414,8 @@ def delete_transaction(
 
 # ---------- SALES ----------
 @app.get("/api/sales", response_model=list[schemas.SaleOut])
-def list_sales(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+@limiter.limit("60/minute")
+def list_sales(request: Request, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     return (
         db.query(models.Sale)
         .filter(models.Sale.user_id == current_user.id)
@@ -429,5 +461,6 @@ def delete_sale(
 
 # ---------- DASHBOARD ----------
 @app.get("/api/dashboard", response_model=list[schemas.DashboardRow])
-def dashboard(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+@limiter.limit("60/minute")
+def dashboard(request: Request, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     return services.get_dashboard(db, current_user.id)
