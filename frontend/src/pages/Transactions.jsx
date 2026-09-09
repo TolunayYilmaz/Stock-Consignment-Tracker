@@ -277,28 +277,28 @@ function isInSeason(dateStr, startDate) {
                       <Trash2 size={18} />
                     </button>
                   </div>
-                  <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Tarih</dt>
-                      <dd className="text-sm font-medium text-stone-700">{new Date(t.date).toLocaleDateString('tr-TR')}</dd>
+                  <div className="flex flex-col">
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Tarih</span>
+                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 text-right">{new Date(t.date).toLocaleDateString('tr-TR')}</span>
                     </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Ürün</dt>
-                      <dd className="text-sm font-medium text-stone-700"><ProductBadge product={t.product_name} /></dd>
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Ürün</span>
+                      <span className="flex items-center gap-2 text-sm font-medium text-stone-800 text-right"><ProductBadge product={t.product_name} /></span>
                     </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Miktar</dt>
-                      <dd className="whitespace-nowrap text-sm font-medium text-stone-700">{t.quantity.toLocaleString('tr-TR')} ton</dd>
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Miktar</span>
+                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 text-right">{t.quantity.toLocaleString('tr-TR')} ton</span>
                     </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Fiyat</dt>
-                      <dd className="whitespace-nowrap text-sm font-medium text-stone-700">{t.price.toLocaleString('tr-TR')} ₺/kg</dd>
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Fiyat</span>
+                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 text-right">{t.price.toLocaleString('tr-TR')} ₺/kg</span>
                     </div>
-                    <div className="col-span-2 flex items-center justify-between gap-2 border-t border-stone-50 pt-2">
-                      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Tutar</dt>
-                      <dd className="whitespace-nowrap text-sm font-bold text-stone-800">{(t.quantity * t.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺</dd>
+                    <div className="flex items-center justify-between py-2 last:border-0">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Tutar</span>
+                      <span className="whitespace-nowrap text-base font-bold text-stone-800 text-right">{(t.quantity * t.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺</span>
                     </div>
-                  </dl>
+                  </div>
                 </div>
               ))}
             </div>
