@@ -57,8 +57,8 @@ export const customersSlice = createSlice({
       .addCase(deleteCustomer.fulfilled, (state, action) => {
         state.items = state.items.filter((c) => c.id !== action.payload)
       })
-      .addCase(deleteCustomer.rejected, (state, action) => {
-        state.error = action.error?.message || 'Müşteri silinemedi'
+      .addCase(deleteCustomer.rejected, (state) => {
+        state.error = ''
       })
       .addCase('auth/login/fulfilled', () => initialState)
       .addCase(logout.fulfilled, () => initialState)

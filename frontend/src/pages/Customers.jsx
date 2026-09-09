@@ -44,8 +44,8 @@ export default function Customers() {
     try {
       await dispatch(deleteCustomer(deleteId)).unwrap()
       setDeleteId(null)
-    } catch (err) {
-      setDeleteError(err.response?.data?.detail || 'Müşteri silinemedi')
+    } catch {
+      setDeleteError("Bu müşteriyi silemezsiniz! Lütfen önce 'İşlemler' ve 'Satışlar' sayfalarından bu müşteriye ait geçmiş kayıtları silin.")
       setDeleteId(null)
     } finally {
       setDeleting(false)
