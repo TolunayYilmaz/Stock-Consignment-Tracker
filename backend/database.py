@@ -45,6 +45,10 @@ def ensure_schema():
         conn.execute(
             text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expiry TIMESTAMP")
         )
+        # KVKK / Kullanıcı Sözleşmesi onay tarihi
+        conn.execute(
+            text("ALTER TABLE users ADD COLUMN IF NOT EXISTS terms_accepted_at TIMESTAMP")
+        )
         # Sistem hesabı dışarıda kilitli kalmasın (çok-tenant güvenlik baypası)
         conn.execute(
             text(

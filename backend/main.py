@@ -77,6 +77,7 @@ def register(user: schemas.UserCreate, request: Request, db: Session = Depends(g
         is_verified=False,
         is_approved=False,
         verification_token=secrets.token_urlsafe(32),
+        terms_accepted_at=datetime.utcnow(),
     )
     db.add(db_user)
     db.commit()

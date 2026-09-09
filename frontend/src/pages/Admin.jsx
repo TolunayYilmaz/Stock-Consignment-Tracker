@@ -91,6 +91,7 @@ export default function Admin() {
               <tr className="border-b border-stone-100 bg-stone-50">
                 <th className="th">E-posta</th>
                 <th className="th">Kayıt Tarihi</th>
+                <th className="th">Sözleşme Onayı</th>
                 <th className="th">Yetki</th>
                 <th className="th">Durum</th>
                 <th className="th">İşlem</th>
@@ -101,6 +102,16 @@ export default function Admin() {
                 <tr key={u.id} className="border-b border-stone-50 hover:bg-farm-50/50">
                   <td className="td font-semibold text-stone-800">{u.email}</td>
                   <td className="td">{fmtDate(u.created_at)}</td>
+                  <td className="td">
+                    {u.terms_accepted_at ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700" title={new Date(u.terms_accepted_at).toLocaleString('tr-TR')}>
+                        <CheckCircle2 size={12} />
+                        {fmtDate(u.terms_accepted_at)}
+                      </span>
+                    ) : (
+                      <span className="text-stone-400">—</span>
+                    )}
+                  </td>
                   <td className="td">
                     <span
                       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${

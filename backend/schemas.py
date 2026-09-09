@@ -36,6 +36,7 @@ class UserOut(BaseModel):
     is_admin: bool = False
     is_verified: bool = False
     is_approved: bool = False
+    terms_accepted_at: Optional[datetime] = None
     created_at: datetime
 
     class Config:

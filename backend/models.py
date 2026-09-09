@@ -19,6 +19,7 @@ class User(Base):
     verification_token = Column(String, nullable=True)
     password_reset_token = Column(String, nullable=True)
     password_reset_expiry = Column(DateTime, nullable=True)
+    terms_accepted_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
