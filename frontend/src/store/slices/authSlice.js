@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import api from '../../api/client'
+import api, { getAccessToken } from '../../api/client'
 
 export const fetchMe = createAsyncThunk('auth/fetchMe', async () => {
   const res = await api.get('/me')
@@ -9,16 +9,18 @@ export const fetchMe = createAsyncThunk('auth/fetchMe', async () => {
 export const login = createAsyncThunk('auth/login', async ({ email, password }, { dispatch }) => {
   const res = await api.post('/token', { email, password })
   localStorage.setItem('token', res.data.access_token)
+  localStorage.setItem('refresh_token', res.data.refresh_token)
   return await dispatch(fetchMe()).unwrap()
 })
 
 export const logout = createAsyncThunk('auth/logout', async () => {
   localStorage.removeItem('token')
+  localStorage.removeItem('refresh_token')
 })
 
 const initialState = {
   user: null,
-  loading: !!localStorage.getItem('token'),
+  loading: !!getAccessToken(),
 }
 
 export const authSlice = createSlice({

@@ -17,6 +17,8 @@ import schemas
 import services
 from auth import (
     create_access_token,
+    create_refresh_token,
+    decode_token,
     get_current_admin,
     get_current_user,
     hash_password,
@@ -96,7 +98,26 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
             detail="Hesabınız yönetici onayı bekliyor. Onaylandıktan sonra giriş yapabilirsiniz.",
         )
     token = create_access_token({"sub": str(db_user.id)})
-    return schemas.Token(access_token=token)
+    refresh_token = create_refresh_token({"sub": str(db_user.id)})
+    return schemas.Token(access_token=token, refresh_token=refresh_token)
+
+
+@app.post("/api/auth/refresh", response_model=schemas.Token)
+def refresh_token(data: schemas.TokenRefresh):
+    try:
+        payload = decode_token(data.refresh_token)
+        if payload.get("type") != "refresh":
+            raise HTTPException(status_code=401, detail="Geçersiz refresh token")
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Geçersiz refresh token")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=401, detail="Refresh token süresi doldu veya geçersiz")
+    new_access = create_access_token({"sub": str(user_id)})
+    new_refresh = create_refresh_token({"sub": str(user_id)})
+    return schemas.Token(access_token=new_access, refresh_token=new_refresh)
 
 
 @app.get("/api/verify-email", response_model=schemas.UserOut)
