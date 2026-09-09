@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   ArrowLeftRight,
@@ -53,7 +53,7 @@ export default function Layout() {
     <div className="min-h-screen bg-farm-50">
       <header className="sticky top-0 z-20 border-b border-stone-100 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-          <div className="flex items-center gap-2.5">
+          <Link to="/" className="flex items-center gap-2.5 cursor-pointer transition-all duration-200 hover:opacity-80 hover:scale-[1.02] active:scale-95">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-green-700 text-white shadow-sm">
               <Tractor size={20} />
             </span>
@@ -63,7 +63,7 @@ export default function Layout() {
               </p>
               <p className="hidden text-[11px] text-stone-400 sm:block">Tarımsal Takip Sistemi</p>
             </div>
-          </div>
+          </Link>
 
           <nav className="hidden items-center gap-1 md:flex">{item}</nav>
 

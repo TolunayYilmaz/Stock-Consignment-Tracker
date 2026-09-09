@@ -103,49 +103,85 @@ export default function Customers() {
             <TireLoader className="h-6 w-6" />
           </div>
         ) : (
-          <table className="w-full min-w-[820px] text-sm">
-            <thead>
-              <tr className="border-b border-stone-100 bg-stone-50">
-                <th className="th">Müşteri</th>
-                {products.map((p) => (
-                  <th key={p} className="th">
-                    {p} (ton)
-                  </th>
-                ))}
-                <th className="th text-right">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((c) => (
-                <tr key={c.id} className="border-b border-stone-50 hover:bg-farm-50/50">
-                  <td className="td font-semibold text-stone-800">{c.name}</td>
-                  {products.map((p) => {
-                    const v = c.balances?.[p] ?? 0
-                    return (
-                      <td key={p} className={`td ${v > 0 ? 'font-semibold text-green-700' : 'text-stone-400'}`}>
-                        {fmt(v)}
+          <>
+            <div className="hidden md:block">
+              <table className="w-full min-w-[820px] text-sm">
+                <thead>
+                  <tr className="border-b border-stone-100 bg-stone-50">
+                    <th className="th">Müşteri</th>
+                    {products.map((p) => (
+                      <th key={p} className="th">
+                        {p} (ton)
+                      </th>
+                    ))}
+                    <th className="th text-right">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((c) => (
+                    <tr key={c.id} className="border-b border-stone-50 hover:bg-farm-50/50">
+                      <td className="td font-semibold text-stone-800">{c.name}</td>
+                      {products.map((p) => {
+                        const v = c.balances?.[p] ?? 0
+                        return (
+                          <td key={p} className={`td ${v > 0 ? 'font-semibold text-green-700' : 'text-stone-400'}`}>
+                            {fmt(v)}
+                          </td>
+                        )
+                      })}
+                      <td className="td">
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDeleteError('')
+                              setDeleteId(c.id)
+                            }}
+                            className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                            title="Müşteriyi sil"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
                       </td>
-                    )
-                  })}
-                  <td className="td">
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDeleteError('')
-                          setDeleteId(c.id)
-                        }}
-                        className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
-                        title="Müşteriyi sil"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex flex-col gap-3 p-3 sm:p-4 md:hidden">
+              {filtered.map((c) => (
+                <div key={c.id} className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft">
+                  <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3">
+                    <span className="truncate text-base font-semibold text-stone-800">{c.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteError('')
+                        setDeleteId(c.id)
+                      }}
+                      className="shrink-0 rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                      title="Müşteriyi sil"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                  <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                    {products.map((p) => {
+                      const v = c.balances?.[p] ?? 0
+                      return (
+                        <div key={p} className="flex items-center justify-between gap-2">
+                          <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">{p}</dt>
+                          <dd className={`text-sm font-medium ${v > 0 ? 'text-green-700' : 'text-stone-400'}`}>{fmt(v)} ton</dd>
+                        </div>
+                      )
+                    })}
+                  </dl>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
         {!loading && filtered.length === 0 && (
           <p className="p-4 text-stone-500">Müşteri bulunamadı.</p>

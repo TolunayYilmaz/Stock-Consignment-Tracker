@@ -203,54 +203,106 @@ function isInSeason(dateStr, startDate) {
             <TireLoader className="h-6 w-6" />
           </div>
         ) : (
-          <table className="w-full min-w-[940px] text-sm">
-            <thead>
-              <tr className="border-b border-stone-100 bg-stone-50">
-                <th className="th">Tarih</th>
-                <th className="th">Müşteri</th>
-                <th className="th">İşlem</th>
-                <th className="th">Ürün</th>
-                <th className="th">Miktar (ton)</th>
-                <th className="th">Fiyat (₺/kg)</th>
-                <th className="th">Tutar</th>
-                <th className="th text-right">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            <div className="hidden md:block">
+              <table className="w-full min-w-[940px] text-sm">
+                <thead>
+                  <tr className="border-b border-stone-100 bg-stone-50">
+                    <th className="th">Tarih</th>
+                    <th className="th">Müşteri</th>
+                    <th className="th">İşlem</th>
+                    <th className="th">Ürün</th>
+                    <th className="th">Miktar (ton)</th>
+                    <th className="th">Fiyat (₺/kg)</th>
+                    <th className="th">Tutar</th>
+                    <th className="th text-right">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTransactions.map((t) => (
+                    <tr key={t.id} className="border-b border-stone-50 hover:bg-farm-50/50">
+                      <td className="td">{new Date(t.date).toLocaleDateString('tr-TR')}</td>
+                      <td className="td font-semibold text-stone-800">{t.customer_name}</td>
+                      <td className="td">
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeCls[t.type] || 'bg-stone-100 text-stone-600'}`}>
+                          {t.type}
+                        </span>
+                      </td>
+                      <td className="td">
+                        <ProductBadge product={t.product_name} />
+                      </td>
+                      <td className="td">{t.quantity.toLocaleString('tr-TR')}</td>
+                      <td className="td">{t.price.toLocaleString('tr-TR')}</td>
+                      <td className="td font-medium">{totalZarar >= 0 && (t.quantity * t.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}</td>
+                      <td className="td">
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDeleteError('')
+                              setDeleteId(t.id)
+                            }}
+                            className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                            title="İşlemi sil"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex flex-col gap-3 p-3 sm:p-4 md:hidden">
               {filteredTransactions.map((t) => (
-                <tr key={t.id} className="border-b border-stone-50 hover:bg-farm-50/50">
-                  <td className="td">{new Date(t.date).toLocaleDateString('tr-TR')}</td>
-                  <td className="td font-semibold text-stone-800">{t.customer_name}</td>
-                  <td className="td">
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeCls[t.type] || 'bg-stone-100 text-stone-600'}`}>
-                      {t.type}
-                    </span>
-                  </td>
-                  <td className="td">
-                    <ProductBadge product={t.product_name} />
-                  </td>
-                  <td className="td">{t.quantity.toLocaleString('tr-TR')}</td>
-                  <td className="td">{t.price.toLocaleString('tr-TR')}</td>
-                  <td className="td font-medium">{totalZarar >= 0 && (t.quantity * t.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}</td>
-                  <td className="td">
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDeleteError('')
-                          setDeleteId(t.id)
-                        }}
-                        className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
-                        title="İşlemi sil"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                <div key={t.id} className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft">
+                  <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeCls[t.type] || 'bg-stone-100 text-stone-600'}`}>
+                        {t.type}
+                      </span>
+                      <span className="truncate text-base font-semibold text-stone-800">{t.customer_name}</span>
                     </div>
-                  </td>
-                </tr>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteError('')
+                        setDeleteId(t.id)
+                      }}
+                      className="shrink-0 rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                      title="İşlemi sil"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                  <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Tarih</dt>
+                      <dd className="text-sm font-medium text-stone-700">{new Date(t.date).toLocaleDateString('tr-TR')}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Ürün</dt>
+                      <dd className="text-sm font-medium text-stone-700"><ProductBadge product={t.product_name} /></dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Miktar</dt>
+                      <dd className="text-sm font-medium text-stone-700">{t.quantity.toLocaleString('tr-TR')} ton</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Fiyat</dt>
+                      <dd className="text-sm font-medium text-stone-700">{t.price.toLocaleString('tr-TR')} ₺/kg</dd>
+                    </div>
+                    <div className="col-span-2 flex items-center justify-between gap-2 border-t border-stone-50 pt-2">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Tutar</dt>
+                      <dd className="text-sm font-bold text-stone-800">{(t.quantity * t.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺</dd>
+                    </div>
+                  </dl>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
         {!loading && transactions.length === 0 && <p className="p-4 text-stone-500">Henüz işlem eklenmemiş.</p>}
         {!loading && transactions.length > 0 && filteredTransactions.length === 0 && (

@@ -190,48 +190,95 @@ export default function Sales() {
             <TireLoader className="h-6 w-6" />
           </div>
         ) : (
-          <table className="w-full min-w-[820px] text-sm">
-            <thead>
-              <tr className="border-b border-stone-100 bg-stone-50">
-                <th className="th">Tarih</th>
-                <th className="th">Müşteri</th>
-                <th className="th">Ürün</th>
-                <th className="th">Miktar (ton)</th>
-                <th className="th">Fiyat (₺/kg)</th>
-                <th className="th">Tutar</th>
-                <th className="th text-right">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            <div className="hidden md:block">
+              <table className="w-full min-w-[820px] text-sm">
+                <thead>
+                  <tr className="border-b border-stone-100 bg-stone-50">
+                    <th className="th">Tarih</th>
+                    <th className="th">Müşteri</th>
+                    <th className="th">Ürün</th>
+                    <th className="th">Miktar (ton)</th>
+                    <th className="th">Fiyat (₺/kg)</th>
+                    <th className="th">Tutar</th>
+                    <th className="th text-right">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSales.map((s) => (
+                    <tr key={s.id} className="border-b border-stone-50 hover:bg-farm-50/50">
+                      <td className="td">{new Date(s.date).toLocaleDateString('tr-TR')}</td>
+                      <td className="td font-semibold text-stone-800">{s.customer_name}</td>
+                      <td className="td">
+                        <ProductBadge product={s.product_name} />
+                      </td>
+                      <td className="td">{s.quantity.toLocaleString('tr-TR')}</td>
+                      <td className="td">{s.price.toLocaleString('tr-TR')}</td>
+                      <td className="td font-medium">{(s.quantity * s.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}</td>
+                      <td className="td">
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDeleteError('')
+                              setDeleteId(s.id)
+                            }}
+                            className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                            title="Satışı sil"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex flex-col gap-3 p-3 sm:p-4 md:hidden">
               {filteredSales.map((s) => (
-                <tr key={s.id} className="border-b border-stone-50 hover:bg-farm-50/50">
-                  <td className="td">{new Date(s.date).toLocaleDateString('tr-TR')}</td>
-                  <td className="td font-semibold text-stone-800">{s.customer_name}</td>
-                  <td className="td">
-                    <ProductBadge product={s.product_name} />
-                  </td>
-                  <td className="td">{s.quantity.toLocaleString('tr-TR')}</td>
-                  <td className="td">{s.price.toLocaleString('tr-TR')}</td>
-                  <td className="td font-medium">{(s.quantity * s.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}</td>
-                  <td className="td">
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDeleteError('')
-                          setDeleteId(s.id)
-                        }}
-                        className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
-                        title="Satışı sil"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                <div key={s.id} className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft">
+                  <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3">
+                    <span className="truncate text-base font-semibold text-stone-800">{s.customer_name}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteError('')
+                        setDeleteId(s.id)
+                      }}
+                      className="shrink-0 rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                      title="Satışı sil"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                  <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Tarih</dt>
+                      <dd className="text-sm font-medium text-stone-700">{new Date(s.date).toLocaleDateString('tr-TR')}</dd>
                     </div>
-                  </td>
-                </tr>
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Ürün</dt>
+                      <dd className="text-sm font-medium text-stone-700"><ProductBadge product={s.product_name} /></dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Miktar</dt>
+                      <dd className="text-sm font-medium text-stone-700">{s.quantity.toLocaleString('tr-TR')} ton</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Fiyat</dt>
+                      <dd className="text-sm font-medium text-stone-700">{s.price.toLocaleString('tr-TR')} ₺/kg</dd>
+                    </div>
+                    <div className="col-span-2 flex items-center justify-between gap-2 border-t border-stone-50 pt-2">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Tutar</dt>
+                      <dd className="text-sm font-bold text-green-700">{(s.quantity * s.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺</dd>
+                    </div>
+                  </dl>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
         {!loading && sales.length === 0 && <p className="p-4 text-stone-500">Henüz satış eklenmemiş.</p>}
         {!loading && sales.length > 0 && filteredSales.length === 0 && (
