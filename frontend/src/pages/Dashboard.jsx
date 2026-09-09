@@ -15,6 +15,13 @@ import { exportToExcel } from '../utils/exportExcel'
 const safeNum = (n) => (Number.isFinite(Number(n)) ? Number(n) : 0)
 const fmt = (n, max = 3) => safeNum(n).toLocaleString('tr-TR', { maximumFractionDigits: max })
 const fmtMoney = (n) => `${safeNum(n).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺`
+const fmtCompact = (n) => {
+  const v = safeNum(n)
+  const abs = Math.abs(v)
+  if (abs >= 1000000) return `${(v / 1000000).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} M ₺`
+  if (abs >= 1000) return `${(v / 1000).toLocaleString('tr-TR', { maximumFractionDigits: 1 })} bin ₺`
+  return `${v.toLocaleString('tr-TR', { maximumFractionDigits: 0 })} ₺`
+}
 
 const PRODUCTS = ['Arpa', 'Buğday', 'Mısır', 'Yağlık Ayçekirdeği', 'Çerezlik Çekirdek']
 const TYPE_NORMAL = 'Normal Alış'
@@ -96,6 +103,22 @@ function computeYearRows(transactions, sales, year) {
   })
 }
 
+// Her yil icin toplam kar/zarari hesaplar; yillar artan sirada siralanir.
+function computeYearlyProfit(transactions, sales) {
+  const years = new Set()
+  for (const t of transactions) years.add(new Date(t.date).getFullYear())
+  for (const s of sales) years.add(new Date(s.date).getFullYear())
+  return [...years]
+    .sort((a, b) => a - b)
+    .map((year) => {
+      const rows = computeYearRows(transactions, sales, year)
+      return {
+        label: String(year),
+        value: rows.reduce((sum, r) => sum + safeNum(r.profit_loss), 0),
+      }
+    })
+}
+
 function BarChart({ data }) {
   const max = useMemo(() => Math.max(...data.map((d) => Math.abs(safeNum(d.value))), 1), [data])
   const hasValue = data.some((d) => safeNum(d.value) !== 0)
@@ -127,6 +150,75 @@ function BarChart({ data }) {
         )
       })}
     </div>
+  )
+}
+
+function YearLineChart({ data }) {
+  const values = data.map((d) => safeNum(d.value))
+  const hasValue = values.some((v) => v !== 0)
+  if (!hasValue) {
+    return (
+      <div className="flex h-80 w-full items-center justify-center text-sm text-stone-400">
+        Yıl bazlı kâr/zarar verisi bulunamadı — satış girildiğinde eğilim çizilir.
+      </div>
+    )
+  }
+
+  const W = 600
+  const H = 250
+  const PAD_X = 26
+  const PAD_TOP = 30
+  const PAD_BOT = 34
+  const innerW = W - PAD_X * 2
+  const innerH = H - PAD_TOP - PAD_BOT
+
+  const max = Math.max(...values.map((v) => Math.abs(v)), 1)
+  const n = values.length
+  const yFor = (v) => PAD_TOP + ((max - v) / (2 * max)) * innerH
+
+  const coords = data.map((d, i) => {
+    const x = n === 1 ? W / 2 : PAD_X + (i * innerW) / (n - 1)
+    const v = safeNum(d.value)
+    return { label: d.label, v, x, y: yFor(v) }
+  })
+
+  const zeroY = yFor(0)
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Yıllara göre kâr/zarar karşılaştırması">
+      {[max / 2, 0, -max / 2].map((gv) =>
+        gv === 0 ? (
+          <line key={gv} x1={PAD_X} x2={W - PAD_X} y1={zeroY} y2={zeroY} stroke="#d6d3d1" strokeWidth="1" strokeDasharray="4 4" />
+        ) : (
+          <g key={gv}>
+            <line x1={PAD_X} x2={W - PAD_X} y1={yFor(gv)} y2={yFor(gv)} stroke="#e7e5e4" strokeWidth="1" />
+            <text x={W - PAD_X - 2} y={yFor(gv) - 4} textAnchor="end" fontSize="10" fill="#a8a29e">
+              {fmtCompact(gv)}
+            </text>
+          </g>
+        )
+      )}
+      <polyline
+        points={coords.map((c) => `${c.x},${c.y}`).join(' ')}
+        fill="none"
+        stroke="#47762a"
+        strokeWidth="3"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      {coords.map((c) => (
+        <g key={c.label}>
+          <title>{`${c.label}: ${fmtMoney(c.v)}`}</title>
+          <circle cx={c.x} cy={c.y} r="6" fill={c.v >= 0 ? '#15803d' : '#dc2626'} stroke="#fff" strokeWidth="2" />
+          <text x={c.x} y={c.y - 10} textAnchor="middle" fontSize="11" fontWeight="700" fill={c.v >= 0 ? '#166534' : '#dc2626'}>
+            {fmtCompact(c.v)}
+          </text>
+          <text x={c.x} y={H - PAD_BOT + 20} textAnchor="middle" fontSize="12" fontWeight="600" fill="#57534e">
+            {c.label}
+          </text>
+        </g>
+      ))}
+    </svg>
   )
 }
 
@@ -177,6 +269,11 @@ export default function Dashboard() {
   const yearRows = useMemo(
     () => computeYearRows(transactions, sales, selectedYear),
     [transactions, sales, selectedYear]
+  )
+
+  const yearlyData = useMemo(
+    () => computeYearlyProfit(transactions, sales),
+    [transactions, sales]
   )
 
   const { totalProfit, totalStock, totalEmanet, totalCiro, stats, chartData } = useMemo(() => {
@@ -313,19 +410,32 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="card mb-6 p-4">
-        <h2 className="mb-3 text-lg font-semibold text-stone-800">Ürün Bazlı Kâr/Zarar (₺)</h2>
-        {loading ? (
-          <div className="flex h-80 w-full items-center justify-center">
-            <TireLoader className="h-[26px] w-[26px]" />
-          </div>
-        ) : (
-          <BarChart data={chartData} />
-        )}
+      <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="card p-4">
+          <h2 className="mb-3 text-lg font-semibold text-stone-800">Ürün Bazlı Kâr/Zarar (₺)</h2>
+          {loading ? (
+            <div className="flex h-80 w-full items-center justify-center">
+              <TireLoader className="h-[26px] w-[26px]" />
+            </div>
+          ) : (
+            <BarChart data={chartData} />
+          )}
+        </div>
+        <div className="card p-4">
+          <h2 className="mb-3 text-lg font-semibold text-stone-800">Yıllara Göre Kâr/Zarar Karşılaştırması (₺)</h2>
+          {loading ? (
+            <div className="flex h-80 w-full items-center justify-center">
+              <TireLoader className="h-[26px] w-[26px]" />
+            </div>
+          ) : (
+            <YearLineChart data={yearlyData} />
+          )}
+        </div>
       </div>
 
-      <div className="card overflow-x-auto">
-        <table className="w-full min-w-[900px] text-sm">
+      <div className="card">
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full min-w-[900px] text-sm">
           <thead>
             <tr className="border-b border-stone-100 bg-stone-50">
               <th className="th">Ürün</th>
@@ -358,7 +468,56 @@ export default function Dashboard() {
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
+
+        <div className="flex flex-col gap-3 p-3 sm:p-4 md:hidden">
+          {yearRows.map((r) => (
+            <div key={r.product_name} className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft">
+              <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <ProductBadge product={r.product_name} showName={false} size={18} />
+                  <span className="truncate text-base font-semibold text-stone-800">{r.product_name}</span>
+                </div>
+                <span
+                  className={`shrink-0 rounded-lg px-2.5 py-1 text-sm font-bold ${
+                    r.profit_loss >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
+                  }`}
+                >
+                  {fmt(r.profit_loss, 2)} ₺
+                </span>
+              </div>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Alınan (ton)</dt>
+                  <dd className="text-sm font-medium text-stone-700">{fmt(r.total_purchased_quantity)}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Alış Maliyeti (₺)</dt>
+                  <dd className="text-sm font-medium text-stone-700">{fmt(r.total_purchased_amount, 2)}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Satılan (ton)</dt>
+                  <dd className="text-sm font-medium text-stone-700">{fmt(r.sold_quantity)}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Ort. Satış (₺/kg)</dt>
+                  <dd className="text-sm font-medium text-stone-700">{fmt(r.avg_sell_price, 2)}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Emanet (ton)</dt>
+                  <dd className="text-sm font-medium text-stone-700">{fmt(r.emanet_balance)}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Güncel Stok (ton)</dt>
+                  <dd className={`text-sm font-semibold ${r.physical_stock < 0 ? 'text-red-600' : 'text-stone-700'}`}>
+                    {fmt(r.physical_stock)}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          ))}
+        </div>
         {!loading && yearRows.length === 0 && <p className="p-4 text-stone-500">Henüz kayıt yok.</p>}
       </div>
 
