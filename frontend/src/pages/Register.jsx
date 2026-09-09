@@ -17,16 +17,17 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [phone, setPhone] = useState('')
   const [companyName, setCompanyName] = useState('')
-  const [kvkk, setKvkk] = useState(false)
+  const [terms, setTerms] = useState(false)
   const [kvkkOpen, setKvkkOpen] = useState(false)
+  const [termsOpen, setTermsOpen] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   const onSubmit = async (e) => {
     e.preventDefault()
-    if (!kvkk) {
-      setError('Devam edebilmek için KVKK Aydınlatma Metni\'ni onaylamanız gerekmektedir.')
+    if (!terms) {
+      setError('Devam edebilmek için KVKK Aydınlatma Metni ve Kullanıcı Sözleşmesi\'ni onaylamanız gerekmektedir.')
       return
     }
     if (password.length < 8 || !/[A-Z]/.test(password) || !/\d/.test(password)) {
@@ -46,6 +47,7 @@ export default function Register() {
         password,
         phone: phone.trim() || null,
         company_name: companyName.trim() || null,
+        terms_accepted: true,
       })
       if (res.data.is_verified && res.data.is_approved) {
         navigate('/login')
@@ -193,8 +195,8 @@ export default function Register() {
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-3 text-sm transition hover:border-green-300">
               <input
                 type="checkbox"
-                checked={kvkk}
-                onChange={(e) => setKvkk(e.target.checked)}
+                checked={terms}
+                onChange={(e) => setTerms(e.target.checked)}
                 required
                 className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-green-700"
               />
@@ -206,10 +208,18 @@ export default function Register() {
                 >
                   KVKK Aydınlatma Metni
                 </button>
-                {' '}okudum ve onaylıyorum.
+                'ni ve{' '}
+                <button
+                  type="button"
+                  onClick={() => setTermsOpen(true)}
+                  className="font-semibold text-green-700 underline transition hover:text-green-800"
+                >
+                  Kullanıcı Sözleşmesi
+                </button>
+                'ni{' '}okudum, onaylıyorum.
               </span>
             </label>
-            <button type="submit" disabled={submitting || !kvkk} className="btn-primary w-full">
+            <button type="submit" disabled={submitting || !terms} className="btn-primary w-full">
               {submitting ? <TireLoader className="h-4 w-4" /> : <UserPlus size={16} />}
               Kayıt Ol
             </button>
@@ -276,11 +286,65 @@ export default function Register() {
             <div className="border-t border-stone-100 bg-stone-50 px-5 py-4">
               <button
                 type="button"
-                onClick={() => { setKvkk(true); setKvkkOpen(false) }}
+                onClick={() => { setTerms(true); setKvkkOpen(false) }}
                 className="btn-primary w-full"
               >
                 <CheckSquare size={16} />
                 Okudum, Onaylıyorum
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {termsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-stone-900/50 backdrop-blur-sm" onClick={() => setTermsOpen(false)} />
+          <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-stone-100 bg-green-700 px-5 py-4">
+              <div className="flex items-center gap-2 text-white">
+                <FileText size={20} />
+                <h2 className="text-lg font-bold">Kullanıcı Sözleşmesi</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTermsOpen(false)}
+                className="rounded-lg p-1 text-white/70 transition hover:bg-white/10 hover:text-white"
+                aria-label="Kapat"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 py-5 text-sm leading-relaxed text-stone-600">
+              <p>
+                Bu Kullanıcı Sözleşmesi ("Sözleşme"), Stok Emanet platformunun kullanımına ilişkin koşulları belirler.
+                Hesap oluşturarak aşağıdaki maddeleri kabul etmiş sayılırsınız.
+              </p>
+              <p className="font-semibold text-stone-800">1. Veri İşleyen Statüsü</p>
+              <p>
+                Kullanıcılar, Stok Emanet sistemine kaydettikleri üçüncü kişilere ait kişisel veriler
+                (isim, telefon, finansal kayıtlar vb.) bakımından 'Veri Sorumlusu' statüsündedir.
+                Stok Emanet yalnızca 'Veri İşleyen' konumundadır.
+              </p>
+              <p className="font-semibold text-stone-800">2. Hukuki Sorumluluk</p>
+              <p>
+                Üçüncü şahıs verilerinin sisteme izinsiz veya hukuka aykırı işlenmesinden doğacak her türlü
+                hukuki, idari ve cezai sorumluluk tamamen kullanıcıya aittir. Stok Emanet sorumlu tutulamaz.
+              </p>
+              <p className="font-semibold text-stone-800">3. Güvenlik</p>
+              <p>
+                Kullanıcının kendi şifresini güvenli tutmamasından veya cihazındaki zafiyetlerden kaynaklanan
+                veri ihlallerinden Stok Emanet sorumlu değildir.
+              </p>
+            </div>
+            <div className="border-t border-stone-100 bg-stone-50 px-5 py-4">
+              <button
+                type="button"
+                onClick={() => setTermsOpen(false)}
+                className="btn-primary w-full"
+              >
+                <CheckSquare size={16} />
+                Kapat
               </button>
             </div>
           </div>

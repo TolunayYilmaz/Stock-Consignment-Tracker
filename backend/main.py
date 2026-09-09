@@ -60,6 +60,11 @@ def _txn_out(t: models.Transaction) -> schemas.TransactionOut:
 # ---------- AUTH ----------
 @app.post("/api/register", response_model=schemas.UserOut)
 def register(user: schemas.UserCreate, request: Request, db: Session = Depends(get_db)):
+    if not user.terms_accepted:
+        raise HTTPException(
+            status_code=400,
+            detail="Kullanıcı sözleşmesini ve KVKK metnini onaylamanız gerekmektedir.",
+        )
     existing = db.query(models.User).filter(models.User.email == user.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Bu email zaten kayıtlı")
