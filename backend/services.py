@@ -33,12 +33,21 @@ def create_transaction(db: Session, data, user_id: int) -> models.Transaction:
     return txn
 
 
-def all_emanet_balances(db: Session, user_id: int) -> dict:
+def all_emanet_balances(db: Session, user_id: int, ceiling_date: datetime = None) -> dict:
     """Tek GROUP BY sorgusuyla tüm müşterilerin ürün bazlı emanet bakiyeleri.
 
     Dönen yapı: {customer_id: {product_name: kalan_emanet}}
     Emanet - Emanetten Alış.
+
+    ceiling_date belirtildiğinde sadece o tarihe kadar olan işlemler dahil edilir.
     """
+    conditions = [
+        models.Transaction.user_id == user_id,
+        models.Transaction.type.in_([TYPE_EMANET, TYPE_EMANETTEN_ALIS]),
+    ]
+    if ceiling_date is not None:
+        conditions.append(models.Transaction.date <= ceiling_date)
+
     rows = db.execute(
         select(
             models.Transaction.customer_id,
@@ -46,10 +55,7 @@ def all_emanet_balances(db: Session, user_id: int) -> dict:
             models.Transaction.type,
             func.sum(models.Transaction.quantity),
         )
-        .where(
-            models.Transaction.user_id == user_id,
-            models.Transaction.type.in_([TYPE_EMANET, TYPE_EMANETTEN_ALIS]),
-        )
+        .where(*conditions)
         .group_by(
             models.Transaction.customer_id,
             models.Transaction.product_name,
@@ -76,12 +82,21 @@ def get_dashboard(db: Session, user_id: int, year: int = None):
     """Ürün bazlı özet ve kâr/zarar hesaplama.
 
     Tarımsal sezon mantığı:
-    - year=None (Tümü): Tüm veriler cumulative olarak kullanılır.
+    - year=None (Tümü): Tüm veriler tarih kısıtı olmadan kullanılır.
     - year belirtildiğinde:
-      - Fiziksel Stok, Emanet Bakiyesi, Ort. Alış Maliyeti: Kümülatif (tüm yıllar)
-      - Satış, Ciro, Kâr/Zarar: Sadece seçilen sezon (Temmuz-Haziran)
+      - Kümülatif (Stok, Emanet, Alınan, Maliyet): zamanın başlangıcından sezon sonuna kadar (<= end_date)
+      - Satış, Ciro, Kâr/Zarar: Sadece seçilen sezon (>= start_date AND <= end_date)
     """
-    # ── Kümülatif: Tüm yıllar ──────────────────────────────────────────
+    ceiling_date = None
+    if year is not None:
+        _, season_end = _season_dates(year)
+        ceiling_date = season_end
+
+    # ── Kümülatif: zamanın başlangıcından sezon sonuna kadar ────────────
+    txn_conditions = [models.Transaction.user_id == user_id]
+    if ceiling_date is not None:
+        txn_conditions.append(models.Transaction.date <= ceiling_date)
+
     txn_rows = db.execute(
         select(
             models.Transaction.product_name,
@@ -89,7 +104,7 @@ def get_dashboard(db: Session, user_id: int, year: int = None):
             func.sum(models.Transaction.quantity),
             func.sum(models.Transaction.quantity * models.Transaction.price),
         )
-        .where(models.Transaction.user_id == user_id)
+        .where(*txn_conditions)
         .group_by(models.Transaction.product_name, models.Transaction.type)
     ).all()
 
