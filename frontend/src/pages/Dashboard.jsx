@@ -39,16 +39,24 @@ function isInSeason(dateStr, startDate) {
   return d >= seasonStart && d <= seasonEnd
 }
 
+// Tavan tarih kontrolü: Tarih sezon sonundan önce veya o gün mü?
+function isBeforeOrAtSeasonEnd(dateStr, startDate) {
+  const d = new Date(dateStr)
+  const seasonEnd = new Date(startDate + 1, 5, 30, 23, 59, 59)
+  return d <= seasonEnd
+}
+
 // Tarımsal sezon mantığına göre ürün bazlı hesaplama.
-// Fiziksel Stok, Emanet Bakiyesi, Ort. Alış: Kümülatif (tüm yıllar)
-// Satış, Kâr/Zarar, Ciro: Seçilen sezon (Temmuz-Haziran)
+// Kümülatif (Stok, Emanet, Alınan, Maliyet): zamanın başlangıcından sezon sonuna kadar
+// Satış, Kâr/Zarar, Ciro: Sadece seçilen sezon (Temmuz-Haziran)
 function computeYearRows(transactions, sales, year) {
   const isAll = year === 'all'
   const targetYear = !isAll ? parseInt(year, 10) : null
 
-  // ── Kümülatif: Tüm işlemler (fiziksel stok + emanet + avg_buy için) ──
+  // ── Kümülatif: sezon sonuna kadar olan işlemler (ceiling date) ───────
   const txnAgg = {}
   for (const t of transactions) {
+    if (!isAll && !isBeforeOrAtSeasonEnd(t.date, targetYear)) continue
     const key = `${t.product_name}||${t.type}`
     const qty = safeNum(t.quantity)
     const amount = qty * safeNum(t.price)
@@ -58,7 +66,7 @@ function computeYearRows(transactions, sales, year) {
     txnAgg[key] = cur
   }
 
-  // ── Sezon-filtreli: Satışlar (kâr/zarar + ciro için) ──
+  // ── Sezon-filtreli: Satışlar (kâr/zarar + ciro için) ──────────────
   const sls = isAll
     ? sales
     : sales.filter((s) => isInSeason(s.date, targetYear))
@@ -86,8 +94,7 @@ function computeYearRows(transactions, sales, year) {
 
     const sold = saleAgg[product] || { qty: 0, amount: 0 }
 
-    // FIX: Emanetten Alış mülkiyet devridir, depoya yeni mal girmez.
-    // Fiziksel Stok = Normal Alış + Emanet - Satışlar
+    // Fiziksel Stok = Normal Alış + Emanet - Satışlar (ceiling date'e kadar)
     const physical_stock = (safeNum(boughtN.qty) + emanet_qty) - safeNum(sold.qty)
 
     const avg_buy = bought_quantity ? bought_amount / bought_quantity : 0
