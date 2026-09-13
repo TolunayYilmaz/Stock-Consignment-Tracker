@@ -317,11 +317,11 @@ function MarketPricesCard() {
           <div className="flex h-24 items-center justify-center text-sm text-red-500">{error}</div>
         ) : (
           <>
-            <ul className="hide-scrollbar flex flex-nowrap gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4">
+            <ul className="flex flex-nowrap gap-4 overflow-x-auto w-full pb-4 pt-2 scroll-smooth snap-x">
               {(data?.prices || []).map((p) => (
                 <li
                   key={p.product}
-                  className="min-w-[240px] flex-shrink-0 snap-center rounded-2xl border border-stone-100 bg-stone-50 p-4 transition hover:-translate-y-0.5 hover:bg-farm-50 hover:shadow-soft"
+                  className="min-w-[260px] flex-shrink-0 snap-start rounded-2xl border border-stone-100 bg-stone-50 p-4 transition hover:-translate-y-0.5 hover:bg-farm-50 hover:shadow-soft"
                 >
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <ProductBadge product={p.product} size={16} />
