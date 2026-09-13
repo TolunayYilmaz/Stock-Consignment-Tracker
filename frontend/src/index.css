@@ -30,4 +30,11 @@
   .td {
     @apply px-4 py-3 text-sm text-stone-700;
   }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
