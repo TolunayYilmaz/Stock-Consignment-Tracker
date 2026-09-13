@@ -481,3 +481,16 @@ def dashboard(
     year: Optional[int] = Query(None, description="Hasat yılı (Örn: 2025). None = Tümü"),
 ):
     return services.get_dashboard(db, current_user.id, harvest_year=year)
+
+
+# ---------- CANLI BORSA FİYATLARI ----------
+@app.get("/api/market-prices", response_model=schemas.MarketPricesOut)
+def market_prices(
+    bourse: str = Query("karaman", description="'karaman' | 'konya' | 'polatli'"),
+):
+    """Seçilen borsanın web sitesinden anlık olarak kazınan Buğday/Arpa/Mısır fiyatları.
+
+    Veriler ilgili ticaret borsasının canlı sayfasından web scraping ile alınır.
+    Site erişilemezse boş/varsayılan değerler döner (500 hata üretilmez).
+    """
+    return services.get_market_prices(bourse)

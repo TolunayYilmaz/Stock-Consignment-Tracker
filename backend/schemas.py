@@ -156,3 +156,23 @@ class UserDashboard(BaseModel):
     total_emanet: float
     total_profit_loss: float
 
+
+class MarketPriceItem(BaseModel):
+    product: str
+    price_min: Optional[float] = None
+    price_max: Optional[float] = None
+    price_avg: Optional[float] = None
+    change_pct: Optional[float] = None
+    unit: str = "₺/kg"
+    quantity: Optional[str] = None
+    available: bool = True
+
+
+class MarketPricesOut(BaseModel):
+    bourse: str
+    bourse_name: str
+    date: str
+    updated_at: str
+    source: str
+    prices: list[MarketPriceItem]
+

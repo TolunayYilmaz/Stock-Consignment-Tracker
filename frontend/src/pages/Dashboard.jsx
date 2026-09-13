@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { BarChart3, Banknote, ChevronRight, FileSpreadsheet, Package, TrendingDown, TrendingUp, Warehouse } from 'lucide-react'
+import { BarChart3, Banknote, ChevronRight, FileSpreadsheet, Minus, Package, TrendingDown, TrendingUp, Warehouse } from 'lucide-react'
+import api from '../api/client'
 import TireLoader from '../components/ui/TireLoader'
 import PageHeader from '../components/PageHeader'
 import ProductBadge from '../components/ProductBadge'
@@ -216,6 +217,145 @@ function YearLineChart({ data }) {
   )
 }
 
+const BOURSE_OPTIONS = [
+  { value: 'karaman', label: 'Karaman Ticaret Borsası' },
+  { value: 'konya', label: 'Konya Ticaret Borsası' },
+  { value: 'polatli', label: 'Polatlı Ticaret Borsası' },
+]
+
+const fmtPrice = (v) =>
+  v == null
+    ? '—'
+    : safeNum(v).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+function TrendBadge({ changePct, available }) {
+  if (!available || changePct === null || changePct === undefined) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-400">
+        <Minus size={12} /> —%
+      </span>
+    )
+  }
+  const up = changePct > 0
+  const down = changePct < 0
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+        up ? 'bg-emerald-100 text-emerald-700' : down ? 'bg-red-100 text-red-600' : 'bg-stone-100 text-stone-500'
+      }`}
+      title={up ? 'Önceki işlem gününe göre artış' : down ? 'Önceki işlem gününe göre düşüş' : 'Değişim yok'}
+    >
+      {up ? <TrendingUp size={12} /> : down ? <TrendingDown size={12} /> : <Minus size={12} />}
+      {up ? '+' : ''}
+      {changePct.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}%
+    </span>
+  )
+}
+
+function MarketPricesCard() {
+  const [bourse, setBourse] = useState('karaman')
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let active = true
+    setLoading(true)
+    setError('')
+    api
+      .get('/market-prices', { params: { bourse } })
+      .then((res) => {
+        if (active) setData(res.data)
+      })
+      .catch(() => {
+        if (active) setError('Borsa verilerine şu an ulaşılamıyor')
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [bourse])
+
+  return (
+    <div className="card">
+      <div className="flex flex-col gap-3 border-b border-stone-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+            <BarChart3 size={20} />
+          </span>
+          <div>
+            <h2 className="text-base font-semibold text-stone-800">Canlı Borsa Fiyatları</h2>
+            {data && (
+              <p className="text-xs text-stone-400">
+                {data.source || data.bourse_name} • Bülten: {data.date}
+              </p>
+            )}
+          </div>
+        </div>
+        <select
+          value={bourse}
+          onChange={(e) => setBourse(e.target.value)}
+          className="cursor-pointer rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 shadow-sm outline-none transition hover:border-green-300 focus:border-green-400"
+          aria-label="Borsa seçimi"
+        >
+          {BOURSE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="p-5">
+        {loading ? (
+          <div className="flex h-32 items-center justify-center">
+            <TireLoader className="h-[22px] w-[22px]" />
+          </div>
+        ) : error ? (
+          <div className="flex h-24 items-center justify-center text-sm text-red-500">{error}</div>
+        ) : (
+          <>
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {(data?.prices || []).map((p) => (
+                <li
+                  key={p.product}
+                  className="rounded-2xl border border-stone-100 bg-stone-50 p-4 transition hover:-translate-y-0.5 hover:bg-farm-50 hover:shadow-soft"
+                >
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <ProductBadge product={p.product} size={16} />
+                    <TrendBadge changePct={p.change_pct} available={p.available} />
+                  </div>
+                  <p className="mb-1 text-2xl font-bold text-stone-800">
+                    {p.available ? `${fmtPrice(p.price_avg)} ₺` : '—'}
+                  </p>
+                  <p className="text-xs text-stone-400">
+                    {p.available
+                      ? `${fmtPrice(p.price_min)} – ${fmtPrice(p.price_max)} ₺/kg`
+                      : 'Bu ürün için işlem bulunamadı'}
+                  </p>
+                  {p.quantity && (
+                    <p className="mt-1.5 text-xs font-medium text-emerald-700">
+                      {safeNum(p.quantity).toLocaleString('tr-TR')} kg işlem hacmi
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {data?.updated_at && (
+              <p className="mt-3 text-center text-[11px] text-stone-300">
+                Gerçek zamanlı web kazıma • Son güncelleme:{' '}
+                {new Date(data.updated_at).toLocaleTimeString('tr-TR')}
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const dispatch = useDispatch()
   const dashboard = useSelector((state) => state.dashboard)
@@ -405,6 +545,10 @@ export default function Dashboard() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="mb-6">
+        <MarketPricesCard />
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
