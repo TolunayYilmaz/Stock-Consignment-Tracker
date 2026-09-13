@@ -1,4 +1,5 @@
 import math
+import time
 import requests
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -511,23 +512,26 @@ _SCRAPERS = {
 }
 
 
-def get_market_prices(bourse: str) -> dict:
-    """Canlı borsa fiyatlarını döner.
+# =====================================================================
+# STALE-WHILE-REVALIDATE ÖNBELLEK (İç Anadolu Borsa Fiyatları)
+# =====================================================================
+# Vercel Serverless'ta aynı Python instance'ı kısa süre yaşar; sonsuz
+# döngü yerine isteğe bağlı yenileme (BackgroundTasks) kullanılır.
+#
+# Durumlar:
+#   empty -> cache'te yok          -> istek sahibi bekler, senkron kazınır
+#   fresh -> < 2 saatlik           -> cache'ten dön (arka plan YOK)
+#   stale -> >= 2 saatlik          -> eski veriyi ANINDA dön + arka planda yenile
+# Yenileme başarısız olursa eski (stale) kayıt olduğu gibi kalır.
 
-    - bourse: 'karaman' | 'konya' | 'polatli'
-    - Siteye ulaşılamazsa / HTML değişirse 500 hata değil, boş veri döner.
-    """
-    bourse = (bourse or "karaman").strip().lower()
-    meta = {"date": datetime.utcnow().strftime("%Y-%m-%d"), "source": ""}
-    prices = _default_market_prices()
+CACHE_TTL_SECONDS = 2 * 60 * 60  # 2 saat (saniye)
 
-    scraper = _SCRAPERS.get(bourse)
-    if scraper:
-        try:
-            prices, meta = scraper()
-        except Exception:
-            prices = _default_market_prices()
+# bourse -> {"data": {...}, "updated_at": epoch_float}
+price_cache = {}
 
+
+def _build_prices_payload(bourse, prices, meta) -> dict:
+    """Scraper çıktısını (prices, meta) API yanıtına dönüştürür."""
     return {
         "bourse": bourse,
         "bourse_name": _BOURSES.get(bourse, {}).get("name", bourse),
@@ -536,3 +540,62 @@ def get_market_prices(bourse: str) -> dict:
         "source": meta.get("source", ""),
         "prices": prices,
     }
+
+
+def fetch_and_update_cache_task(bourse: str) -> None:
+    """Arka plan görevi: güncel scraping yapar, SADECE price_cache[bourse]'ü günceller.
+
+    İstek sahibini asla beklemez; bot tespitini önlemek için gerçek tarayıcı
+    User-Agent header'ı (_HTTP_HEADERS) kullanılır. Hata olursa cache'e
+    dokunulmaz (eski veri korunur) ve görev sessizce sonlanır.
+    """
+    bourse = (bourse or "karaman").strip().lower()
+    scraper = _SCRAPERS.get(bourse)
+    if not scraper:
+        return
+    try:
+        prices, meta = scraper()
+        price_cache[bourse] = {
+            "data": _build_prices_payload(bourse, prices, meta),
+            "updated_at": time.time(),
+        }
+    except Exception:
+        # Yenileme başarısızsa eski kayıt geçerliliğini korur.
+        return
+
+
+def cache_status(bourse: str) -> str:
+    """'empty' | 'fresh' | 'stale' döner."""
+    bourse = (bourse or "karaman").strip().lower()
+    entry = price_cache.get(bourse)
+    if not entry:
+        return "empty"
+    age = time.time() - float(entry.get("updated_at", 0))
+    return "fresh" if age < CACHE_TTL_SECONDS else "stale"
+
+
+def get_cached_data(bourse: str) -> dict:
+    """Cache'teki hazır yanıtı döner (yoksa boş varsayılanı üretir)."""
+    bourse = (bourse or "karaman").strip().lower()
+    entry = price_cache.get(bourse)
+    if entry and entry.get("data"):
+        return entry["data"]
+    meta = {"date": datetime.utcnow().strftime("%Y-%m-%d"), "source": ""}
+    return _build_prices_payload(bourse, _default_market_prices(), meta)
+
+
+def get_market_prices(bourse: str) -> dict:
+    """Canlı borsa fiyatlarını döner (cache boş iken senkron / blocking kazıma).
+
+    - bourse: 'karaman' | 'konya' | 'polatli'
+    - Sadece ilk kullanıcı (cache boş) bekler; sonrası cache'ten anında döner.
+    - Siteye ulaşılamazsa / HTML değişirse 500 hata değil, boş veri döner.
+    """
+    bourse = (bourse or "karaman").strip().lower()
+
+    try:
+        fetch_and_update_cache_task(bourse)
+    except Exception:
+        pass
+
+    return get_cached_data(bourse)

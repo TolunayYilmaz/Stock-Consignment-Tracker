@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Optional
-from fastapi import FastAPI, Depends, HTTPException, Query, Request
+from fastapi import FastAPI, Depends, HTTPException, Query, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -486,11 +486,31 @@ def dashboard(
 # ---------- CANLI BORSA FİYATLARI ----------
 @app.get("/api/market-prices", response_model=schemas.MarketPricesOut)
 def market_prices(
+    background_tasks: BackgroundTasks,
     bourse: str = Query("karaman", description="'karaman' | 'konya' | 'polatli'"),
 ):
-    """Seçilen borsanın web sitesinden anlık olarak kazınan Buğday/Arpa/Mısır fiyatları.
+    """Stale-While-Revalidate önbellekli canlı borsa fiyatları.
+
+    1. DURUM (Cache Boş):    Cache'te yoksa senkron kazıma yapılır, cache'e yazılır
+                             ve döner. Sadece İLK kullanıcı bekler.
+    2. DURUM (Cache Taze):   < 2 saatlik veri varsa direkt cache'ten dön (arkada
+                             yenileme yok, borsa sitelerine istek atılmaz).
+    3. DURUM (Cache Eskimiş):>= 2 saatlik veri varsa kullanıcı BEKLEMEZ; eski veriyi
+                             anında döner, BackgroundTasks ile arka planda
+                             fetch_and_update_cache_task yenileme yapar.
 
     Veriler ilgili ticaret borsasının canlı sayfasından web scraping ile alınır.
     Site erişilemezse boş/varsayılan değerler döner (500 hata üretilmez).
     """
+    bourse = (bourse or "karaman").strip().lower()
+    status = services.cache_status(bourse)
+
+    if status == "fresh":
+        return services.get_cached_data(bourse)
+
+    if status == "stale":
+        stale = services.get_cached_data(bourse)
+        background_tasks.add_task(services.fetch_and_update_cache_task, bourse)
+        return stale
+
     return services.get_market_prices(bourse)
