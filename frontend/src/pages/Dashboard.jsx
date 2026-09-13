@@ -317,32 +317,34 @@ function MarketPricesCard() {
           <div className="flex h-24 items-center justify-center text-sm text-red-500">{error}</div>
         ) : (
           <>
-            <ul className="flex flex-nowrap gap-4 overflow-x-auto w-full pb-4 pt-2 scroll-smooth snap-x">
-              {(data?.prices || []).map((p) => (
-                <li
-                  key={p.product}
-                  className="min-w-[260px] flex-shrink-0 snap-start rounded-2xl border border-stone-100 bg-stone-50 p-4 transition hover:-translate-y-0.5 hover:bg-farm-50 hover:shadow-soft"
-                >
-                  <div className="mb-3 flex items-center justify-between gap-2">
-                    <ProductBadge product={p.product} size={16} />
-                    <TrendBadge changePct={p.change_pct} available={p.available} />
-                  </div>
-                  <p className="mb-1 text-2xl font-bold text-stone-800">
-                    {p.available ? `${fmtPrice(p.price_avg)} ₺` : '—'}
-                  </p>
-                  <p className="text-xs text-stone-400">
-                    {p.available
-                      ? `${fmtPrice(p.price_min)} – ${fmtPrice(p.price_max)} ₺/kg`
-                      : 'Bu ürün için işlem bulunamadı'}
-                  </p>
-                  {p.quantity && (
-                    <p className="mt-1.5 text-xs font-medium text-emerald-700">
-                      {safeNum(p.quantity).toLocaleString('tr-TR')} kg işlem hacmi
+            <div className="overflow-hidden">
+              <ul className="animate-marquee">
+                {[...(data?.prices || []), ...(data?.prices || [])].map((p, i) => (
+                  <li
+                    key={`${p.product}-${i}`}
+                    className="w-[260px] flex-shrink-0 mr-4 rounded-2xl border border-stone-100 bg-stone-50 p-4 transition hover:-translate-y-0.5 hover:bg-farm-50 hover:shadow-soft"
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <ProductBadge product={p.product} size={16} />
+                      <TrendBadge changePct={p.change_pct} available={p.available} />
+                    </div>
+                    <p className="mb-1 text-2xl font-bold text-stone-800">
+                      {p.available ? `${fmtPrice(p.price_avg)} ₺` : '—'}
                     </p>
-                  )}
-                </li>
-              ))}
-            </ul>
+                    <p className="text-xs text-stone-400">
+                      {p.available
+                        ? `${fmtPrice(p.price_min)} – ${fmtPrice(p.price_max)} ₺/kg`
+                        : 'Bu ürün için işlem bulunamadı'}
+                    </p>
+                    {p.quantity && (
+                      <p className="mt-1.5 text-xs font-medium text-emerald-700">
+                        {safeNum(p.quantity).toLocaleString('tr-TR')} kg işlem hacmi
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
             {data?.updated_at && (
               <p className="mt-3 text-center text-[11px] text-stone-300">
                 Gerçek zamanlı web kazıma • Son güncelleme:{' '}
