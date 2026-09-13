@@ -317,7 +317,7 @@ function MarketPricesCard() {
           <div className="flex h-24 items-center justify-center text-sm text-red-500">{error}</div>
         ) : (
           <>
-            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
               {(data?.prices || []).map((p) => (
                 <li
                   key={p.product}

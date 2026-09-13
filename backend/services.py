@@ -164,7 +164,7 @@ def get_dashboard(db: Session, user_id: int, harvest_year: int = None):
 # Tüm kazıma işlemleri sıkı try/except ile sarılır; site erişilemezse veya
 # HTML değişirse 500 hatası yerine boş/varsayılan değerler döner.
 
-MARKET_PRODUCTS = ["Buğday", "Arpa", "Mısır"]
+MARKET_PRODUCTS = ["Buğday", "Arpa", "Mısır", "Yağlık Ayçekirdeği", "Çerezlik Çekirdek"]
 
 _BOURSES = {
     "karaman": {"name": "Karaman Ticaret Borsası", "url": "https://www.karamantb.org.tr/"},
@@ -217,7 +217,9 @@ def _weighted_avg(items):
 
 
 def _default_market_prices(product_results=None):
-    """Buğday/Arpa/Mısır için boş (ulaşılamaz) cevap üretir."""
+    """Beş ürün (Buğday/Arpa/Mısır/Yağlık Ayçekirdeği/Çerezlik Çekirdek) için
+    boş (ulaşılamaz/işlem yok) cevap üretir. Tüm ürünler her yanıtta bulunur;
+    işlemi olmayan ürünler available=False + tüm değerler None döner."""
     product_results = product_results or {}
     prices = []
     for product in MARKET_PRODUCTS:
@@ -279,6 +281,13 @@ def _scrape_karaman():
         elif "BUĞDAY" in t:
             # Makarnalık tercih edilir; ilk bulunan buğday satırı kullanılır.
             product = "Buğday"
+        elif "AYÇİÇEĞİ" in t or "AYÇEKİRDEĞİ" in t or "ÇEKİRDEK" in t:
+            # Karaman widget'ında "AYÇİÇEĞİ YAĞLIK" / "AYÇİÇEĞİ ÇEREZLİK"
+            # (veya benzeri) başlıklar kullanılır.
+            if "ÇEREZLİK" in t:
+                product = "Çerezlik Çekirdek"
+            elif "YAĞLIK" in t:
+                product = "Yağlık Ayçekirdeği"
         if product and product not in found:
             found[product] = w
 
@@ -322,6 +331,10 @@ def _konya_aggregate(rows, kind):
             ok = g == "arpa"
         elif kind == "misir":
             ok = g == "mısır"
+        elif kind == "yaglik":
+            ok = ("ayçiçeği" in g or "çekirdek" in g) and ("yağlık" in g or "yaglik" in g)
+        elif kind == "cerezlik":
+            ok = ("ayçiçeği" in g or "çekirdek" in g) and ("çerezlik" in g or "cerezlik" in g)
         else:  # buğday (tüm çeşitler)
             ok = "buğday" in g
         if ok:
@@ -381,7 +394,13 @@ def _scrape_konya():
                     continue
 
     results = {}
-    for product, kind in (("Buğday", "buğday"), ("Arpa", "arpa"), ("Mısır", "misir")):
+    for product, kind in (
+        ("Buğday", "buğday"),
+        ("Arpa", "arpa"),
+        ("Mısır", "misir"),
+        ("Yağlık Ayçekirdeği", "yaglik"),
+        ("Çerezlik Çekirdek", "cerezlik"),
+    ):
         if not current_rows:
             results[product] = {"price_min": None, "price_max": None, "price_avg": None, "change_pct": None, "quantity": None}
             continue
@@ -419,8 +438,12 @@ def _polatli_fetch(day):
     return data.get("Bulten") or []
 
 
-def _polatli_aggregate(rows, keyword):
-    """Polatlı ashx satırlarından ürün bazlı min/max/ortalama/tonajı üretir."""
+def _polatli_aggregate(rows, keyword, extra=None):
+    """Polatlı ashx satırlarından ürün bazlı min/max/ortalama/tonajı üretir.
+
+    - keyword: zorunlu geçmesi gereken ürün anahtarı (ör. "BUĞDAY")
+    - extra: ayçiçeği gibi alt sınıflı ürünler için ek zorunlu anahtar
+             (ör. "YAĞLIK" / "ÇEREZLİK"), None olabilir."""
     if not rows:
         return None, None, None, None
     mins, maxs, weighted = [], [], []
@@ -430,6 +453,8 @@ def _polatli_aggregate(rows, keyword):
             continue  # kategori satırları fiyatsızdır
         name = (r.get("UrunAdi") or "").upper()
         if keyword not in name:
+            continue
+        if extra and extra not in name:
             continue
         mn = _safe_float(r.get("MinFiyat"))
         mx = _safe_float(r.get("MaxFiyat"))
@@ -480,14 +505,20 @@ def _scrape_polatli():
                     continue
 
     results = {}
-    for product, keyword in (("Buğday", "BUĞDAY"), ("Arpa", "ARPA"), ("Mısır", "MISIR")):
+    for product, keyword, extra in (
+        ("Buğday", "BUĞDAY", None),
+        ("Arpa", "ARPA", None),
+        ("Mısır", "MISIR", None),
+        ("Yağlık Ayçekirdeği", "AYÇİÇEĞİ", "YAĞLIK"),
+        ("Çerezlik Çekirdek", "AYÇİÇEĞİ", "ÇEREZLİK"),
+    ):
         if not current_rows:
             results[product] = {"price_min": None, "price_max": None, "price_avg": None, "change_pct": None, "quantity": None}
             continue
-        mn, mx, avg, miktar = _polatli_aggregate(current_rows, keyword)
+        mn, mx, avg, miktar = _polatli_aggregate(current_rows, keyword, extra)
         prev_avg = None
         if prev_rows:
-            _, _, prev_avg, _ = _polatli_aggregate(prev_rows, keyword)
+            _, _, prev_avg, _ = _polatli_aggregate(prev_rows, keyword, extra)
         change_pct = None
         if avg is not None and prev_avg and prev_avg > 0:
             change_pct = round(((avg - prev_avg) / prev_avg) * 100, 2)
