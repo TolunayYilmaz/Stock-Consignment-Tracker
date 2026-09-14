@@ -36,6 +36,25 @@ export const addTransaction = createAsyncThunk(
   }
 )
 
+export const updateTransaction = createAsyncThunk(
+  'transactions/update',
+  async ({ id, data }, { dispatch }) => {
+    const payload = {
+      customer_id: Number(data.customer_id),
+      type: data.type,
+      product_name: data.product_name,
+      quantity: parseFloat(data.quantity),
+      price: data.type === 'Emanet' ? 0 : parseFloat(data.price) || 0,
+    }
+    if (data.date) payload.date = new Date(data.date).toISOString()
+    if (data.harvest_year) payload.harvest_year = Number(data.harvest_year)
+    const res = await api.put(`/transactions/${id}`, payload)
+    dispatch(transactionsSlice.actions.updateItem(res.data))
+    await dispatch(fetchTransactions({ force: true, silent: true }))
+    await dispatch(fetchDashboard({ force: true, silent: true }))
+  }
+)
+
 export const deleteTransaction = createAsyncThunk(
   'transactions/delete',
   async (id, { dispatch }) => {
@@ -59,6 +78,10 @@ export const transactionsSlice = createSlice({
   reducers: {
     appendItem: (state, action) => {
       state.items = [action.payload, ...state.items]
+    },
+    updateItem: (state, action) => {
+      const updated = action.payload
+      state.items = state.items.map((t) => (t.id === updated.id ? updated : t))
     },
     clearTransactions: () => initialState,
   },

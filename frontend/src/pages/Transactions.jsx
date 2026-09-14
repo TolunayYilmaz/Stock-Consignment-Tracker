@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { ArrowLeftRight, Save, Search, Trash2 } from 'lucide-react'
+import { ArrowLeftRight, Pencil, Save, Search, Trash2 } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import ProductBadge from '../components/ProductBadge'
 import TireLoader from '../components/ui/TireLoader'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { fetchCustomers } from '../store/slices/customersSlice'
-import { addTransaction, deleteTransaction, fetchTransactions } from '../store/slices/transactionsSlice'
+import { addTransaction, deleteTransaction, fetchTransactions, updateTransaction } from '../store/slices/transactionsSlice'
 import { PRODUCTS, TRANSACTION_TYPES } from '../api/constants'
 import { getHarvestYearOptions, getHarvestYearFilterOptions } from '../utils/getHarvestYearOptions'
 
@@ -40,6 +40,11 @@ export default function Transactions() {
   const [deleteId, setDeleteId] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState(null)
+  const [editForm, setEditForm] = useState(null)
+  const [updating, setUpdating] = useState(false)
+  const [updateError, setUpdateError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedYear, setSelectedYear] = useState('all')
   const [selectedProduct, setSelectedProduct] = useState('Tümü')
@@ -94,6 +99,49 @@ export default function Transactions() {
       setDeleteId(null)
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const toDateInputValue = (d) => {
+    if (!d) return ''
+    const dt = new Date(d)
+    if (Number.isNaN(dt.getTime())) return ''
+    const m = String(dt.getMonth() + 1).padStart(2, '0')
+    const day = String(dt.getDate()).padStart(2, '0')
+    return `${dt.getFullYear()}-${m}-${day}`
+  }
+
+  const openEditModal = (item) => {
+    setUpdateError('')
+    setEditForm({
+      customer_id: item.customer_id ?? '',
+      type: item.type,
+      product_name: item.product_name,
+      quantity: item.quantity,
+      price: item.price,
+      date: toDateInputValue(item.date),
+      harvest_year: item.harvest_year ?? '',
+    })
+    setEditingItem(item)
+    setIsEditModalOpen(true)
+  }
+
+  const onEditChange = (e) => setEditForm({ ...editForm, [e.target.name]: e.target.value })
+
+  const handleUpdate = async (e) => {
+    e.preventDefault()
+    if (!editingItem || !editForm) return
+    setUpdating(true)
+    setUpdateError('')
+    try {
+      await dispatch(updateTransaction({ id: editingItem.id, data: editForm })).unwrap()
+      setIsEditModalOpen(false)
+      setEditingItem(null)
+      setEditForm(null)
+    } catch (err) {
+      setUpdateError(err.response?.data?.detail || 'İşlem güncellenemedi')
+    } finally {
+      setUpdating(false)
     }
   }
 
@@ -267,6 +315,14 @@ export default function Transactions() {
                         <div className="flex justify-end">
                           <button
                             type="button"
+                            onClick={() => openEditModal(t)}
+                            className="rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700"
+                            title="İşlemi düzenle"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => {
                               setDeleteError('')
                               setDeleteId(t.id)
@@ -294,17 +350,27 @@ export default function Transactions() {
                       </span>
                       <span className="truncate text-base font-semibold text-stone-800">{t.customer_name}</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeleteError('')
-                        setDeleteId(t.id)
-                      }}
-                      className="shrink-0 rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
-                      title="İşlemi sil"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(t)}
+                        className="shrink-0 rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700"
+                        title="İşlemi düzenle"
+                      >
+                        <Pencil size={18} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteError('')
+                          setDeleteId(t.id)
+                        }}
+                        className="shrink-0 rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                        title="İşlemi sil"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
                   <div className="flex flex-col">
                     <div className="flex items-center justify-between py-2 border-b border-stone-50">
@@ -345,6 +411,117 @@ export default function Transactions() {
           </div>
         )}
       </div>
+
+      {isEditModalOpen && editForm && editingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => {
+              if (!updating) setIsEditModalOpen(false)
+            }}
+          />
+          <form onSubmit={handleUpdate} className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                <Pencil className="text-blue-600" size={18} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-stone-800">İşlemi Düzenle</h3>
+                <p className="text-sm text-stone-500">İşlem kaydını güncelleyin ve değişiklikleri kaydedin.</p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className="label">Müşteri</label>
+                <select name="customer_id" value={editForm.customer_id} onChange={onEditChange} required className="input-field">
+                  <option value="">Seçin</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">İşlem Tipi</label>
+                <select name="type" value={editForm.type} onChange={onEditChange} className="input-field">
+                  {TRANSACTION_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Ürün</label>
+                <select name="product_name" value={editForm.product_name} onChange={onEditChange} className="input-field">
+                  {PRODUCTS.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Hasat Yılı</label>
+                <select name="harvest_year" value={editForm.harvest_year} onChange={onEditChange} className="input-field">
+                  {HARVEST_YEAR_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Miktar (ton)</label>
+                <input type="number" step="any" min="0" name="quantity" value={editForm.quantity} onChange={onEditChange} required className="input-field" />
+              </div>
+              <div>
+                <label className="label">Fiyat (₺/kg)</label>
+                <input
+                  type="number"
+                  step="any"
+                  min="0"
+                  name="price"
+                  value={editForm.price}
+                  onChange={onEditChange}
+                  disabled={editForm.type === 'Emanet'}
+                  className="input-field disabled:bg-stone-100"
+                />
+                {editForm.type === 'Emanet' && <p className="mt-1 text-[11px] text-amber-600">Emanette fiyat otomatik 0</p>}
+              </div>
+              <div>
+                <label className="label">Tarih</label>
+                <input type="date" name="date" value={editForm.date} onChange={onEditChange} className="input-field" />
+              </div>
+            </div>
+
+            {updateError && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{updateError}</p>}
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!updating) setIsEditModalOpen(false)
+                }}
+                disabled={updating}
+                className="rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-semibold text-stone-600 transition hover:bg-stone-50 disabled:opacity-60"
+              >
+                İptal
+              </button>
+              <button
+                type="submit"
+                disabled={updating}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-800 disabled:opacity-60"
+              >
+                {updating && <TireLoader className="h-4 w-4" />}
+                Değişiklikleri Kaydet
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <ConfirmDialog
         open={deleteId !== null}

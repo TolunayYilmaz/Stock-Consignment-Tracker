@@ -34,6 +34,24 @@ export const addSale = createAsyncThunk(
   }
 )
 
+export const updateSale = createAsyncThunk(
+  'sales/update',
+  async ({ id, data }, { dispatch }) => {
+    const payload = {
+      customer_name: data.customer_name,
+      product_name: data.product_name,
+      quantity: parseFloat(data.quantity),
+      price: parseFloat(data.price) || 0,
+    }
+    if (data.date) payload.date = new Date(data.date).toISOString()
+    if (data.harvest_year) payload.harvest_year = Number(data.harvest_year)
+    const res = await api.put(`/sales/${id}`, payload)
+    dispatch(salesSlice.actions.updateItem(res.data))
+    await dispatch(fetchSales({ force: true, silent: true }))
+    await dispatch(fetchDashboard({ force: true, silent: true }))
+  }
+)
+
 export const deleteSale = createAsyncThunk(
   'sales/delete',
   async (id, { dispatch }) => {
@@ -56,6 +74,10 @@ export const salesSlice = createSlice({
   reducers: {
     appendItem: (state, action) => {
       state.items = [action.payload, ...state.items]
+    },
+    updateItem: (state, action) => {
+      const updated = action.payload
+      state.items = state.items.map((s) => (s.id === updated.id ? updated : s))
     },
     clearSales: () => initialState,
   },

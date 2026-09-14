@@ -400,6 +400,39 @@ def create_transaction(data: schemas.TransactionCreate, db: Session = Depends(ge
     return out
 
 
+@app.put("/api/transactions/{transaction_id}", response_model=schemas.TransactionOut)
+def update_transaction(
+    transaction_id: int,
+    data: schemas.TransactionCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    txn = (
+        db.query(models.Transaction)
+        .filter(models.Transaction.id == transaction_id, models.Transaction.user_id == current_user.id)
+        .first()
+    )
+    if not txn:
+        raise HTTPException(status_code=404, detail="İşlem bulunamadı")
+    customer = (
+        db.query(models.Customer)
+        .filter(models.Customer.id == data.customer_id, models.Customer.user_id == current_user.id)
+        .first()
+    )
+    if not customer:
+        raise HTTPException(status_code=400, detail="Müşteri bulunamadı")
+    txn.customer_id = data.customer_id
+    txn.type = data.type
+    txn.product_name = data.product_name
+    txn.quantity = data.quantity
+    txn.price = 0.0 if data.type == services.TYPE_EMANET else (data.price or 0.0)
+    txn.date = data.date or txn.date
+    txn.harvest_year = data.harvest_year or (txn.date.year if txn.date else None)
+    db.commit()
+    db.refresh(txn)
+    return _txn_out(txn)
+
+
 @app.delete("/api/transactions/{transaction_id}", response_model=schemas.TransactionOut)
 def delete_transaction(
     transaction_id: int,
@@ -447,6 +480,31 @@ def create_sale(data: schemas.SaleCreate, db: Session = Depends(get_db), current
         harvest_year=data.harvest_year,
     )
     db.add(sale)
+    db.commit()
+    db.refresh(sale)
+    return sale
+
+
+@app.put("/api/sales/{sale_id}", response_model=schemas.SaleOut)
+def update_sale(
+    sale_id: int,
+    data: schemas.SaleCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    sale = (
+        db.query(models.Sale)
+        .filter(models.Sale.id == sale_id, models.Sale.user_id == current_user.id)
+        .first()
+    )
+    if not sale:
+        raise HTTPException(status_code=404, detail="Satış bulunamadı")
+    sale.customer_name = data.customer_name
+    sale.product_name = data.product_name
+    sale.quantity = data.quantity
+    sale.price = data.price
+    sale.date = data.date or sale.date
+    sale.harvest_year = data.harvest_year or (sale.date.year if sale.date else None)
     db.commit()
     db.refresh(sale)
     return sale
