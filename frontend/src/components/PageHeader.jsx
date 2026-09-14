@@ -6,8 +6,8 @@ export default function PageHeader({ icon: Icon, title, subtitle, right }) {
           <Icon size={22} />
         </span>
         <div>
-          <h1 className="text-xl font-bold text-stone-800 sm:text-2xl">{title}</h1>
-          {subtitle && <p className="text-sm text-stone-500">{subtitle}</p>}
+          <h1 className="text-xl font-bold text-stone-800 dark:text-stone-100 sm:text-2xl">{title}</h1>
+          {subtitle && <p className="text-sm text-stone-500 dark:text-stone-400">{subtitle}</p>}
         </div>
       </div>
       {right && <div className="flex items-center gap-2 sm:ml-auto">{right}</div>}

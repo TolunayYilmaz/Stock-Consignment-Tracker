@@ -198,22 +198,22 @@ export default function Sales() {
             Satışı Kaydet
           </button>
         </div>
-        {formError && <p className="text-sm text-red-600">{formError}</p>}
+        {formError && <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>}
       </form>
 
-      {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-      {deleteError && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{deleteError}</p>}
+      {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-400">{error}</p>}
+      {deleteError && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-400">{deleteError}</p>}
 
       <div className="card mb-4 flex items-center justify-between px-5 py-4">
-        <span className="text-sm font-medium text-stone-500">Toplam Ciro</span>
-        <span className="text-lg font-bold text-green-700">
+        <span className="text-sm font-medium text-stone-500 dark:text-stone-400">Toplam Ciro</span>
+        <span className="text-lg font-bold text-green-700 dark:text-green-500">
           {totalRevenue.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺
         </span>
       </div>
 
       <div className="card mb-4 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-xs">
-          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500" />
           <input
             type="text"
             value={searchQuery}
@@ -224,12 +224,12 @@ export default function Sales() {
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
-            <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Hasat Yılı</span>
+          <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm dark:border-stone-700 dark:bg-stone-800">
+            <span className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Hasat Yılı</span>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
+              className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none dark:text-stone-200"
               aria-label="Hasat yılı seçimi"
             >
               {FILTER_YEAR_OPTIONS.map((o) => (
@@ -239,12 +239,12 @@ export default function Sales() {
               ))}
             </select>
           </div>
-          <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
-            <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Ürün</span>
+          <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm dark:border-stone-700 dark:bg-stone-800">
+            <span className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Ürün</span>
             <select
               value={selectedProduct}
               onChange={(e) => setSelectedProduct(e.target.value)}
-              className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
+              className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none dark:text-stone-200"
               aria-label="Ürün tipi seçimi"
             >
               <option value="Tümü">Tümü</option>
@@ -268,7 +268,7 @@ export default function Sales() {
             <div className="hidden md:block">
               <table className="w-full min-w-[820px] text-sm">
                 <thead>
-                  <tr className="border-b border-stone-100 bg-stone-50">
+                  <tr className="border-b border-stone-100 bg-stone-50 dark:border-stone-800 dark:bg-stone-800/50">
                     <th className="th">Tarih</th>
                     <th className="th">Müşteri</th>
                     <th className="th">Ürün</th>
@@ -281,13 +281,13 @@ export default function Sales() {
                 </thead>
                 <tbody>
                   {filteredSales.map((s) => (
-                    <tr key={s.id} className="border-b border-stone-50 hover:bg-farm-50/50">
+                    <tr key={s.id} className="border-b border-stone-50 hover:bg-farm-50/50 dark:border-stone-800 dark:hover:bg-stone-800/50">
                       <td className="td">{new Date(s.date).toLocaleDateString('tr-TR')}</td>
-                      <td className="td font-semibold text-stone-800">{s.customer_name}</td>
+                      <td className="td font-semibold text-stone-800 dark:text-stone-100">{s.customer_name}</td>
                       <td className="td">
                         <ProductBadge product={s.product_name} />
                       </td>
-                      <td className="td font-medium text-stone-600">{s.harvest_year || '-'}</td>
+                      <td className="td font-medium text-stone-600 dark:text-stone-400">{s.harvest_year || '-'}</td>
                       <td className="td">{s.quantity.toLocaleString('tr-TR')}</td>
                       <td className="td">{s.price.toLocaleString('tr-TR')}</td>
                       <td className="td font-medium">{(s.quantity * s.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}</td>
@@ -296,7 +296,7 @@ export default function Sales() {
                           <button
                             type="button"
                             onClick={() => openEditModal(s)}
-                            className="rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700"
+                            className="rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/40 dark:hover:text-blue-400"
                             title="Satışı düzenle"
                           >
                             <Pencil size={18} />
@@ -307,7 +307,7 @@ export default function Sales() {
                               setDeleteError('')
                               setDeleteId(s.id)
                             }}
-                            className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                            className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/40 dark:hover:text-red-400"
                             title="Satışı sil"
                           >
                             <Trash2 size={18} />
@@ -322,14 +322,14 @@ export default function Sales() {
 
             <div className="flex flex-col gap-3 p-3 sm:p-4 md:hidden">
               {filteredSales.map((s) => (
-                <div key={s.id} className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft">
-                  <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3">
-                    <span className="truncate text-base font-semibold text-stone-800">{s.customer_name}</span>
+                <div key={s.id} className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft dark:border-stone-800 dark:bg-stone-900">
+                  <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3 dark:border-stone-800">
+                    <span className="truncate text-base font-semibold text-stone-800 dark:text-stone-100">{s.customer_name}</span>
                     <div className="flex shrink-0 items-center gap-1">
                       <button
                         type="button"
                         onClick={() => openEditModal(s)}
-                        className="shrink-0 rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700"
+                        className="shrink-0 rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/40 dark:hover:text-blue-400"
                         title="Satışı düzenle"
                       >
                         <Pencil size={18} />
@@ -340,7 +340,7 @@ export default function Sales() {
                           setDeleteError('')
                           setDeleteId(s.id)
                         }}
-                        className="shrink-0 rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                        className="shrink-0 rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/40 dark:hover:text-red-400"
                         title="Satışı sil"
                       >
                         <Trash2 size={18} />
@@ -348,29 +348,29 @@ export default function Sales() {
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Tarih</span>
-                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 text-right">{new Date(s.date).toLocaleDateString('tr-TR')}</span>
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50 dark:border-stone-800">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Tarih</span>
+                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 dark:text-stone-100 text-right">{new Date(s.date).toLocaleDateString('tr-TR')}</span>
                     </div>
-                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Hasat Yılı</span>
-                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 text-right">{s.harvest_year || '-'}</span>
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50 dark:border-stone-800">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Hasat Yılı</span>
+                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 dark:text-stone-100 text-right">{s.harvest_year || '-'}</span>
                     </div>
-                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Ürün</span>
-                      <span className="flex items-center gap-2 text-sm font-medium text-stone-800 text-right"><ProductBadge product={s.product_name} /></span>
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50 dark:border-stone-800">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Ürün</span>
+                      <span className="flex items-center gap-2 text-sm font-medium text-stone-800 dark:text-stone-100 text-right"><ProductBadge product={s.product_name} /></span>
                     </div>
-                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Miktar</span>
-                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 text-right">{s.quantity.toLocaleString('tr-TR')} ton</span>
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50 dark:border-stone-800">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Miktar</span>
+                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 dark:text-stone-100 text-right">{s.quantity.toLocaleString('tr-TR')} ton</span>
                     </div>
-                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Fiyat</span>
-                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 text-right">{s.price.toLocaleString('tr-TR')} ₺/kg</span>
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50 dark:border-stone-800">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Fiyat</span>
+                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 dark:text-stone-100 text-right">{s.price.toLocaleString('tr-TR')} ₺/kg</span>
                     </div>
                     <div className="flex items-center justify-between py-2 last:border-0">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Tutar</span>
-                      <span className="whitespace-nowrap text-base font-bold text-green-700 text-right">{(s.quantity * s.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺</span>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Tutar</span>
+                      <span className="whitespace-nowrap text-base font-bold text-green-700 dark:text-green-500 text-right">{(s.quantity * s.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺</span>
                     </div>
                   </div>
                 </div>
@@ -378,9 +378,9 @@ export default function Sales() {
             </div>
           </>
         )}
-        {!loading && sales.length === 0 && <p className="p-4 text-stone-500">Henüz satış eklenmemiş.</p>}
+        {!loading && sales.length === 0 && <p className="p-4 text-stone-500 dark:text-stone-400">Henüz satış eklenmemiş.</p>}
         {!loading && sales.length > 0 && filteredSales.length === 0 && (
-          <div className="flex items-center justify-center gap-2 px-4 py-10 text-stone-500">
+          <div className="flex items-center justify-center gap-2 px-4 py-10 text-stone-500 dark:text-stone-400">
             <Search size={18} />
             <p className="text-sm">Bu kriterlere uygun satış bulunamadı.</p>
           </div>
@@ -395,14 +395,14 @@ export default function Sales() {
               if (!updating) setIsEditModalOpen(false)
             }}
           />
-          <form onSubmit={handleUpdate} className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <form onSubmit={handleUpdate} className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-stone-900">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-                <Pencil className="text-blue-600" size={18} />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/40">
+                <Pencil className="text-blue-600 dark:text-blue-400" size={18} />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-stone-800">Satışı Düzenle</h3>
-                <p className="text-sm text-stone-500">Satış kaydını güncelleyin ve değişiklikleri kaydedin.</p>
+                <h3 className="text-lg font-semibold text-stone-800 dark:text-stone-100">Satışı Düzenle</h3>
+                <p className="text-sm text-stone-500 dark:text-stone-400">Satış kaydını güncelleyin ve değişiklikleri kaydedin.</p>
               </div>
             </div>
 
@@ -454,7 +454,7 @@ export default function Sales() {
               </div>
             </div>
 
-            {updateError && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{updateError}</p>}
+            {updateError && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-400">{updateError}</p>}
 
             <div className="mt-6 flex justify-end gap-3">
               <button
@@ -463,14 +463,14 @@ export default function Sales() {
                   if (!updating) setIsEditModalOpen(false)
                 }}
                 disabled={updating}
-                className="rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-semibold text-stone-600 transition hover:bg-stone-50 disabled:opacity-60"
+                className="rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-semibold text-stone-600 transition hover:bg-stone-50 disabled:opacity-60 dark:border-stone-700 dark:text-stone-400 dark:hover:bg-stone-800"
               >
                 İptal
               </button>
               <button
                 type="submit"
                 disabled={updating}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-800 disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-800 disabled:opacity-60 dark:bg-green-600 dark:hover:bg-green-500"
               >
                 {updating && <TireLoader className="h-4 w-4" />}
                 Değişiklikleri Kaydet

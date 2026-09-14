@@ -6,14 +6,24 @@
   body {
     @apply bg-farm-50 text-stone-800 antialiased;
   }
+  .dark body,
+  .dark {
+    @apply bg-stone-950 text-stone-100;
+  }
 }
 
 @layer components {
   .card {
     @apply bg-white rounded-2xl shadow-soft border border-stone-100;
   }
+  .dark .card {
+    @apply bg-stone-900 border-stone-800;
+  }
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 rounded-xl bg-green-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-800 disabled:opacity-50;
+  }
+  .dark .btn-primary {
+    @apply bg-green-600 hover:bg-green-700;
   }
   .btn-danger {
     @apply inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700;
@@ -21,14 +31,26 @@
   .input-field {
     @apply w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100;
   }
+  .dark .input-field {
+    @apply bg-stone-800 border-stone-700 text-stone-200 focus:border-green-500 focus:ring-green-900/50;
+  }
   .label {
     @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-stone-500;
+  }
+  .dark .label {
+    @apply text-stone-400;
   }
   .th {
     @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-stone-500;
   }
+  .dark .th {
+    @apply text-stone-400;
+  }
   .td {
     @apply px-4 py-3 text-sm text-stone-700;
+  }
+  .dark .td {
+    @apply text-stone-300;
   }
 }
 
@@ -40,12 +62,21 @@
   background: #f1f5f9;
   border-radius: 8px;
 }
+.dark ::-webkit-scrollbar-track {
+  background: #27272a;
+}
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 8px;
 }
+.dark ::-webkit-scrollbar-thumb {
+  background: #52525b;
+}
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #71717a;
 }
 
 /* Auto-scrolling marquee band (market price cards) */

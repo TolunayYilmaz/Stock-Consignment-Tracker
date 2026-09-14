@@ -55,8 +55,8 @@ export default function BreakdownModal({ mode, rows, yearLabel, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-stone-900/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-stone-100 bg-green-700 px-5 py-4">
+      <div className="relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-stone-900">
+        <div className="flex items-center justify-between border-b border-stone-100 bg-green-700 px-5 py-4 dark:border-stone-800">
           <div>
             <h2 className="flex items-center gap-2 text-lg font-bold text-white">
               <Icon size={20} />
@@ -85,9 +85,9 @@ export default function BreakdownModal({ mode, rows, yearLabel, onClose }) {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center justify-between rounded-xl bg-stone-50 px-4 py-3">
-                <span className="text-sm font-semibold text-stone-600">{config.totalLabel}</span>
-                <span className="text-lg font-bold text-stone-800">{fmt(total)} {config.unit}</span>
+              <div className="flex items-center justify-between rounded-xl bg-stone-50 px-4 py-3 dark:bg-stone-800">
+                <span className="text-sm font-semibold text-stone-600 dark:text-stone-400">{config.totalLabel}</span>
+                <span className="text-lg font-bold text-stone-800 dark:text-stone-100">{fmt(total)} {config.unit}</span>
               </div>
 
               {items.map((i) => (
@@ -95,13 +95,13 @@ export default function BreakdownModal({ mode, rows, yearLabel, onClose }) {
                   <div className="mb-1.5 flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
                       <ProductBadge product={i.product} showName={false} size={13} />
-                      <span className="truncate text-sm font-medium text-stone-700">{i.product}</span>
+                      <span className="truncate text-sm font-medium text-stone-700 dark:text-stone-300">{i.product}</span>
                     </div>
-                    <span className="text-sm font-bold text-stone-800">
+                    <span className="text-sm font-bold text-stone-800 dark:text-stone-100">
                       {fmt(i.value)} {config.unit}
                     </span>
                   </div>
-                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-stone-100">
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
                     <div
                       className={`h-full rounded-full transition-all ${
                         i.value < 0 ? 'bg-red-500' : 'bg-green-600'

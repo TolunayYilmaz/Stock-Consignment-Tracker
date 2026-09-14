@@ -32,29 +32,29 @@ export default function UserDetailModal({ user, onClose }) {
       value: fmtMoney(totalProfit),
       sub: totalProfit < 0 ? 'Zararda' : 'Kârda',
       icon: totalProfit >= 0 ? TrendingUp : TrendingDown,
-      cls: totalProfit >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600',
+      cls: totalProfit >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400',
     },
     {
       label: 'Toplam Stok',
       value: `${fmt(data?.total_physical_stock)} ton`,
       sub: 'Depoda kalan ürün',
       icon: Warehouse,
-      cls: 'bg-amber-100 text-amber-700',
+      cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
     },
     {
       label: 'Toplam Emanet',
       value: `${fmt(data?.total_emanet)} ton`,
       sub: 'Emanette bekleyen',
       icon: Package,
-      cls: 'bg-farm-100 text-green-700',
+      cls: 'bg-farm-100 text-green-700 dark:bg-farm-900/40 dark:text-green-400',
     },
   ]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-stone-900/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-stone-100 bg-green-700 px-5 py-4">
+      <div className="relative z-10 flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-stone-900">
+        <div className="flex items-center justify-between border-b border-stone-100 bg-green-700 px-5 py-4 dark:border-stone-800">
           <div>
             <h2 className="text-lg font-bold text-white">Kullanıcı Detayı</h2>
             <p className="text-sm text-white/70">{user?.email}</p>
@@ -75,7 +75,7 @@ export default function UserDetailModal({ user, onClose }) {
               <TireLoader className="h-6 w-6" />
             </div>
           ) : error ? (
-            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-400">{error}</p>
           ) : (
             <div>
               <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -83,11 +83,11 @@ export default function UserDetailModal({ user, onClose }) {
                   <div key={s.label} className="card p-4">
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="text-sm text-stone-500">{s.label}</p>
-                        <p className={`mt-1 text-xl font-bold ${totalProfit >= 0 && s.label === 'Toplam Kâr/Zarar' ? 'text-green-700' : 'text-stone-800'}`}>
+                        <p className="text-sm text-stone-500 dark:text-stone-400">{s.label}</p>
+                        <p className={`mt-1 text-xl font-bold ${totalProfit >= 0 && s.label === 'Toplam Kâr/Zarar' ? 'text-green-700 dark:text-green-400' : 'text-stone-800 dark:text-stone-100'}`}>
                           {s.value}
                         </p>
-                        <p className="mt-0.5 text-xs text-stone-400">{s.sub}</p>
+                        <p className="mt-0.5 text-xs text-stone-400 dark:text-stone-500">{s.sub}</p>
                       </div>
                       <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${s.cls}`}>
                         <s.icon size={20} />
@@ -97,11 +97,11 @@ export default function UserDetailModal({ user, onClose }) {
                 ))}
               </div>
 
-              <h3 className="mb-3 text-base font-semibold text-stone-800">Ürün Bazlı Stok Dağılımı</h3>
+              <h3 className="mb-3 text-base font-semibold text-stone-800 dark:text-stone-100">Ürün Bazlı Stok Dağılımı</h3>
               <div className="card overflow-x-auto">
                 <table className="w-full min-w-[640px] text-sm">
                   <thead>
-                    <tr className="border-b border-stone-100 bg-stone-50">
+                    <tr className="border-b border-stone-100 bg-stone-50 dark:border-stone-800 dark:bg-stone-800/50">
                       <th className="th">Ürün</th>
                       <th className="th">Güncel Stok (ton)</th>
                       <th className="th">Emanet (ton)</th>
@@ -111,23 +111,23 @@ export default function UserDetailModal({ user, onClose }) {
                   </thead>
                   <tbody>
                     {data.rows.map((r) => (
-                      <tr key={r.product_name} className="border-b border-stone-50 hover:bg-farm-50/50">
+                      <tr key={r.product_name} className="border-b border-stone-50 hover:bg-farm-50/50 dark:border-stone-800 dark:hover:bg-stone-800/50">
                         <td className="td">
                           <ProductBadge product={r.product_name} />
                         </td>
-                        <td className={`td font-semibold ${r.physical_stock < 0 ? 'text-red-600' : ''}`}>
+                        <td className={`td font-semibold ${r.physical_stock < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>
                           {fmt(r.physical_stock)}
                         </td>
                         <td className="td">{fmt(r.emanet_balance)}</td>
                         <td className="td">{fmt(r.sold_quantity)}</td>
-                        <td className={`td font-semibold ${r.profit_loss >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                        <td className={`td font-semibold ${r.profit_loss >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                           {fmt(r.profit_loss, 2)}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                {data.rows.length === 0 && <p className="p-4 text-stone-500">Bu kullanıcının henüz kaydı yok.</p>}
+                {data.rows.length === 0 && <p className="p-4 text-stone-500 dark:text-stone-400">Bu kullanıcının henüz kaydı yok.</p>}
               </div>
             </div>
           )}

@@ -89,21 +89,21 @@ export default function Customers() {
             </button>
           </div>
         </form>
-        {formError && <p className="mt-3 text-sm text-red-600">{formError}</p>}
+        {formError && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{formError}</p>}
       </div>
 
-      <div className="mb-4 flex items-center gap-2 rounded-xl bg-white px-3 py-2 shadow-soft sm:max-w-sm">
-        <Search size={16} className="text-stone-400" />
+      <div className="mb-4 flex items-center gap-2 rounded-xl bg-white px-3 py-2 shadow-soft dark:bg-stone-900 sm:max-w-sm">
+        <Search size={16} className="text-stone-400 dark:text-stone-500" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Müşteri ara..."
-          className="w-full bg-transparent text-sm outline-none"
+          className="w-full bg-transparent text-sm text-stone-700 outline-none dark:text-stone-200"
         />
       </div>
 
-      {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-      {deleteError && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{deleteError}</p>}
+      {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-400">{error}</p>}
+      {deleteError && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-400">{deleteError}</p>}
 
       <div className="card overflow-x-auto">
         {loading ? (
@@ -115,7 +115,7 @@ export default function Customers() {
             <div className="hidden md:block">
               <table className="w-full min-w-[820px] text-sm">
                 <thead>
-                  <tr className="border-b border-stone-100 bg-stone-50">
+                  <tr className="border-b border-stone-100 bg-stone-50 dark:border-stone-800 dark:bg-stone-800/50">
                     <th className="th">Müşteri</th>
                     {products.map((p) => (
                       <th key={p} className="th">
@@ -127,12 +127,12 @@ export default function Customers() {
                 </thead>
                 <tbody>
                   {filtered.map((c) => (
-                    <tr key={c.id} className="border-b border-stone-50 hover:bg-farm-50/50">
-                      <td className="td font-semibold text-stone-800">{c.name}</td>
+                    <tr key={c.id} className="border-b border-stone-50 hover:bg-farm-50/50 dark:border-stone-800 dark:hover:bg-stone-800/50">
+                      <td className="td font-semibold text-stone-800 dark:text-stone-100">{c.name}</td>
                       {products.map((p) => {
                         const v = c.balances?.[p] ?? 0
                         return (
-                          <td key={p} className={`td ${v > 0 ? 'font-semibold text-green-700' : 'text-stone-400'}`}>
+                          <td key={p} className={`td ${v > 0 ? 'font-semibold text-green-700 dark:text-green-400' : 'text-stone-400 dark:text-stone-500'}`}>
                             {fmt(v)}
                           </td>
                         )
@@ -149,7 +149,7 @@ export default function Customers() {
                                 companyName: user?.company_name,
                               })
                             }
-                            className="rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700"
+                            className="rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/40 dark:hover:text-blue-400"
                             title="PDF Ekstre indir"
                           >
                             <FileText size={18} />
@@ -160,7 +160,7 @@ export default function Customers() {
                               setDeleteError('')
                               setDeleteId(c.id)
                             }}
-                            className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                            className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/40 dark:hover:text-red-400"
                             title="Müşteriyi sil"
                           >
                             <Trash2 size={18} />
@@ -175,9 +175,9 @@ export default function Customers() {
 
             <div className="flex flex-col gap-3 p-3 sm:p-4 md:hidden">
               {filtered.map((c) => (
-                <div key={c.id} className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft">
-                  <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3">
-                    <span className="truncate text-base font-semibold text-stone-800">{c.name}</span>
+                <div key={c.id} className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft dark:border-stone-800 dark:bg-stone-900">
+                  <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3 dark:border-stone-800">
+                    <span className="truncate text-base font-semibold text-stone-800 dark:text-stone-100">{c.name}</span>
                     <div className="flex shrink-0 items-center gap-1">
                       <button
                         type="button"
@@ -189,7 +189,7 @@ export default function Customers() {
                             companyName: user?.company_name,
                           })
                         }
-                        className="rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700"
+                        className="rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/40 dark:hover:text-blue-400"
                         title="PDF Ekstre indir"
                       >
                         <FileText size={18} />
@@ -200,7 +200,7 @@ export default function Customers() {
                           setDeleteError('')
                           setDeleteId(c.id)
                         }}
-                        className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                        className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/40 dark:hover:text-red-400"
                         title="Müşteriyi sil"
                       >
                         <Trash2 size={18} />
@@ -211,9 +211,9 @@ export default function Customers() {
                     {products.map((p) => {
                       const v = c.balances?.[p] ?? 0
                       return (
-                        <div key={p} className="flex items-center justify-between border-b border-stone-100 py-2 last:border-0">
-                          <span className="text-sm text-stone-500">{p}</span>
-                          <span className={`whitespace-nowrap text-sm font-semibold ${v > 0 ? 'text-green-700' : 'text-stone-400'}`}>{fmt(v)} ton</span>
+                        <div key={p} className="flex items-center justify-between border-b border-stone-100 py-2 last:border-0 dark:border-stone-800">
+                          <span className="text-sm text-stone-500 dark:text-stone-400">{p}</span>
+                          <span className={`whitespace-nowrap text-sm font-semibold ${v > 0 ? 'text-green-700 dark:text-green-400' : 'text-stone-400 dark:text-stone-500'}`}>{fmt(v)} ton</span>
                         </div>
                       )
                     })}
@@ -224,7 +224,7 @@ export default function Customers() {
           </>
         )}
         {!loading && filtered.length === 0 && (
-          <p className="p-4 text-stone-500">Müşteri bulunamadı.</p>
+          <p className="p-4 text-stone-500 dark:text-stone-400">Müşteri bulunamadı.</p>
         )}
       </div>
 

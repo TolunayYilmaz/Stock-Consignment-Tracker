@@ -78,7 +78,7 @@ export default function Admin() {
     <div>
       <PageHeader icon={ShieldCheck} title="Kullanıcı Yönetimi" subtitle="Gizli yönetim paneli" />
 
-      {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-400">{error}</p>}
 
       <div className="card overflow-x-auto">
         {loading ? (
@@ -88,7 +88,7 @@ export default function Admin() {
         ) : (
           <table className="w-full min-w-[920px] text-sm">
             <thead>
-              <tr className="border-b border-stone-100 bg-stone-50">
+              <tr className="border-b border-stone-100 bg-stone-50 dark:border-stone-800 dark:bg-stone-800/50">
                 <th className="th">E-posta</th>
                 <th className="th">Kayıt Tarihi</th>
                 <th className="th">Sözleşme Onayı</th>
@@ -99,23 +99,23 @@ export default function Admin() {
             </thead>
             <tbody>
               {users.map((u) => (
-                <tr key={u.id} className="border-b border-stone-50 hover:bg-farm-50/50">
-                  <td className="td font-semibold text-stone-800">{u.email}</td>
+                <tr key={u.id} className="border-b border-stone-50 hover:bg-farm-50/50 dark:border-stone-800 dark:hover:bg-stone-800/50">
+                  <td className="td font-semibold text-stone-800 dark:text-stone-100">{u.email}</td>
                   <td className="td">{fmtDate(u.created_at)}</td>
                   <td className="td">
                     {u.terms_accepted_at ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700" title={new Date(u.terms_accepted_at).toLocaleString('tr-TR')}>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-400" title={new Date(u.terms_accepted_at).toLocaleString('tr-TR')}>
                         <CheckCircle2 size={12} />
                         {fmtDate(u.terms_accepted_at)}
                       </span>
                     ) : (
-                      <span className="text-stone-400">—</span>
+                      <span className="text-stone-400 dark:text-stone-500">—</span>
                     )}
                   </td>
                   <td className="td">
                     <span
                       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        u.is_admin ? 'bg-green-100 text-green-700' : 'bg-stone-100 text-stone-500'
+                        u.is_admin ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
                       }`}
                     >
                       {u.is_admin ? <ShieldCheck size={12} /> : <ShieldOff size={12} />}
@@ -126,7 +126,7 @@ export default function Admin() {
                     <div className="flex flex-col items-start gap-1.5">
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                          u.is_verified ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                          u.is_verified ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
                         }`}
                       >
                         <BadgeCheck size={12} />
@@ -134,7 +134,7 @@ export default function Admin() {
                       </span>
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                          u.is_approved ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                          u.is_approved ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
                         }`}
                       >
                         {u.is_approved ? <CheckCircle2 size={12} /> : <Clock size={12} />}
@@ -156,7 +156,7 @@ export default function Admin() {
                       )}
                       <button
                         onClick={() => setDetailUser(u)}
-                        className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-50"
+                        className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/40"
                         title="Kullanıcı detayını görüntüle"
                       >
                         <Eye size={14} />
@@ -165,7 +165,7 @@ export default function Admin() {
                       <button
                         onClick={() => setResetTarget(u)}
                         disabled={u.id === user.id}
-                        className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-amber-600 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-amber-600 transition hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/40 disabled:cursor-not-allowed disabled:opacity-40"
                         title={u.id === user.id ? 'Kendi şifrenizi buradan sıfırlayamazsınız' : 'Kullanıcı şifresini sıfırla'}
                       >
                         <KeyRound size={14} />
@@ -174,7 +174,7 @@ export default function Admin() {
                       <button
                         onClick={() => onDelete(u)}
                         disabled={u.id === user.id}
-                        className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/40 disabled:cursor-not-allowed disabled:opacity-40"
                         title={u.id === user.id ? 'Kendi hesabınızı silemezsiniz' : 'Kullanıcıyı sil'}
                       >
                         <Trash2 size={14} />
@@ -194,27 +194,27 @@ export default function Admin() {
       {resetTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-stone-900/50 backdrop-blur-sm" onClick={closeReset} />
-          <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+          <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl dark:bg-stone-900">
             <button
               onClick={closeReset}
-              className="absolute right-4 top-4 rounded-lg p-1 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
+              className="absolute right-4 top-4 rounded-lg p-1 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-stone-800 dark:hover:text-stone-300"
               aria-label="Kapat"
             >
               <X size={18} />
             </button>
             {resetPassword ? (
               <div>
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                  <KeyRound className="text-green-600" size={22} />
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/40">
+                  <KeyRound className="text-green-600 dark:text-green-400" size={22} />
                 </div>
-                <h3 className="text-center text-lg font-semibold text-stone-800">Şifre Sıfırlandı</h3>
-                <p className="mt-2 text-center text-sm text-stone-500">
-                  <span className="font-semibold text-stone-700">{resetTarget.email}</span> kullanıcısı için geçici şifre:
+                <h3 className="text-center text-lg font-semibold text-stone-800 dark:text-stone-100">Şifre Sıfırlandı</h3>
+                <p className="mt-2 text-center text-sm text-stone-500 dark:text-stone-400">
+                  <span className="font-semibold text-stone-700 dark:text-stone-300">{resetTarget.email}</span> kullanıcısı için geçici şifre:
                 </p>
-                <div className="mt-4 rounded-xl bg-stone-50 px-4 py-3 text-center">
-                  <code className="text-lg font-bold tracking-wide text-green-700">{resetPassword}</code>
+                <div className="mt-4 rounded-xl bg-stone-50 px-4 py-3 text-center dark:bg-stone-800">
+                  <code className="text-lg font-bold tracking-wide text-green-700 dark:text-green-400">{resetPassword}</code>
                 </div>
-                <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-center text-xs text-amber-800">
+                <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-center text-xs text-amber-800 dark:bg-amber-900/40 dark:text-amber-400">
                   Bu şifreyi kullanıcıya güvenli bir şekilde iletin. Kullanıcı bu şifreyle giriş yapabilir.
                 </p>
                 <button onClick={closeReset} className="btn-primary mt-5 w-full">
@@ -223,12 +223,12 @@ export default function Admin() {
               </div>
             ) : (
               <div>
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
-                  <KeyRound className="text-amber-600" size={22} />
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40">
+                  <KeyRound className="text-amber-600 dark:text-amber-400" size={22} />
                 </div>
-                <h3 className="text-center text-lg font-semibold text-stone-800">Şifreyi Sıfırla</h3>
-                <p className="mt-2 text-center text-sm text-stone-500">
-                  <span className="font-semibold text-stone-700">{resetTarget.email}</span> kullanıcısının şifresi
+                <h3 className="text-center text-lg font-semibold text-stone-800 dark:text-stone-100">Şifreyi Sıfırla</h3>
+                <p className="mt-2 text-center text-sm text-stone-500 dark:text-stone-400">
+                  <span className="font-semibold text-stone-700 dark:text-stone-300">{resetTarget.email}</span> kullanıcısının şifresi
                   sistem tarafından otomatik oluşturulan geçici bir şifre ile değiştirilecek. Devam etmek istiyor
                   musunuz?
                 </p>
@@ -236,7 +236,7 @@ export default function Admin() {
                   <button
                     onClick={closeReset}
                     disabled={resetting}
-                    className="rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-semibold text-stone-600 transition hover:bg-stone-50 disabled:opacity-60"
+                    className="rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-semibold text-stone-600 transition hover:bg-stone-50 disabled:opacity-60 dark:border-stone-700 dark:text-stone-400 dark:hover:bg-stone-800"
                   >
                     Vazgeç
                   </button>

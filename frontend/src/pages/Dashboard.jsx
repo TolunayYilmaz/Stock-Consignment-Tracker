@@ -119,7 +119,7 @@ function BarChart({ data }) {
   const hasValue = data.some((d) => safeNum(d.value) !== 0)
   if (!hasValue) {
     return (
-      <div className="flex h-80 w-full items-center justify-center text-sm text-stone-400">
+      <div className="flex h-80 w-full items-center justify-center text-sm text-stone-400 dark:text-stone-500">
         Satış bulunmadığı için kâr/zarar 0 ₺ — satış girildiğinde barlar çizilir.
       </div>
     )
@@ -140,7 +140,7 @@ function BarChart({ data }) {
                 title={`${d.label}: ${fmtMoney(v)}`}
               />
             </div>
-            <span className="mt-1.5 text-center text-xs font-medium text-stone-500">{d.label}</span>
+            <span className="mt-1.5 text-center text-xs font-medium text-stone-500 dark:text-stone-400">{d.label}</span>
           </div>
         )
       })}
@@ -153,7 +153,7 @@ function YearLineChart({ data }) {
   const hasValue = values.some((v) => v !== 0)
   if (!hasValue) {
     return (
-      <div className="flex h-80 w-full items-center justify-center text-sm text-stone-400">
+      <div className="flex h-80 w-full items-center justify-center text-sm text-stone-400 dark:text-stone-500">
         Yıl bazlı kâr/zarar verisi bulunamadı — satış girildiğinde eğilim çizilir.
       </div>
     )
@@ -183,11 +183,11 @@ function YearLineChart({ data }) {
     <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Yıllara göre kâr/zarar karşılaştırması">
       {[max / 2, 0, -max / 2].map((gv) =>
         gv === 0 ? (
-          <line key={gv} x1={PAD_X} x2={W - PAD_X} y1={zeroY} y2={zeroY} stroke="#d6d3d1" strokeWidth="1" strokeDasharray="4 4" />
+          <line key={gv} x1={PAD_X} x2={W - PAD_X} y1={zeroY} y2={zeroY} className="stroke-stone-300 dark:stroke-stone-700" strokeWidth="1" strokeDasharray="4 4" />
         ) : (
           <g key={gv}>
-            <line x1={PAD_X} x2={W - PAD_X} y1={yFor(gv)} y2={yFor(gv)} stroke="#e7e5e4" strokeWidth="1" />
-            <text x={W - PAD_X - 2} y={yFor(gv) - 4} textAnchor="end" fontSize="10" fill="#a8a29e">
+            <line x1={PAD_X} x2={W - PAD_X} y1={yFor(gv)} y2={yFor(gv)} className="stroke-stone-200 dark:stroke-stone-800" strokeWidth="1" />
+            <text x={W - PAD_X - 2} y={yFor(gv) - 4} textAnchor="end" fontSize="10" className="fill-stone-400 dark:fill-stone-500">
               {fmtCompact(gv)}
             </text>
           </g>
@@ -204,11 +204,11 @@ function YearLineChart({ data }) {
       {coords.map((c) => (
         <g key={c.label}>
           <title>{`${c.label}: ${fmtMoney(c.v)}`}</title>
-          <circle cx={c.x} cy={c.y} r="6" fill={c.v >= 0 ? '#15803d' : '#dc2626'} stroke="#fff" strokeWidth="2" />
-          <text x={c.x} y={c.y - 10} textAnchor="middle" fontSize="11" fontWeight="700" fill={c.v >= 0 ? '#166534' : '#dc2626'}>
+          <circle cx={c.x} cy={c.y} r="6" fill={c.v >= 0 ? '#15803d' : '#dc2626'} className="stroke-white dark:stroke-stone-900" strokeWidth="2" />
+          <text x={c.x} y={c.y - 10} textAnchor="middle" fontSize="11" fontWeight="700" fill={c.v >= 0 ? '#166534' : '#dc2626'} className={c.v >= 0 ? 'dark:fill-green-400' : ''}>
             {fmtCompact(c.v)}
           </text>
-          <text x={c.x} y={H - PAD_BOT + 20} textAnchor="middle" fontSize="12" fontWeight="600" fill="#57534e">
+          <text x={c.x} y={H - PAD_BOT + 20} textAnchor="middle" fontSize="12" fontWeight="600" className="fill-stone-600 dark:fill-stone-400">
             {c.label}
           </text>
         </g>
@@ -231,7 +231,7 @@ const fmtPrice = (v) =>
 function TrendBadge({ changePct, available }) {
   if (!available || changePct === null || changePct === undefined) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-400">
+      <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-400 dark:bg-stone-800 dark:text-stone-500">
         <Minus size={12} /> —%
       </span>
     )
@@ -241,7 +241,11 @@ function TrendBadge({ changePct, available }) {
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-        up ? 'bg-emerald-100 text-emerald-700' : down ? 'bg-red-100 text-red-600' : 'bg-stone-100 text-stone-500'
+        up
+          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+          : down
+            ? 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400'
+            : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'
       }`}
       title={up ? 'Önceki işlem gününe göre artış' : down ? 'Önceki işlem gününe göre düşüş' : 'Değişim yok'}
     >
@@ -280,15 +284,15 @@ function MarketPricesCard() {
 
   return (
     <div className="card">
-      <div className="flex flex-col gap-3 border-b border-stone-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-stone-100 px-5 py-4 dark:border-stone-800 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
             <BarChart3 size={20} />
           </span>
           <div>
-            <h2 className="text-base font-semibold text-stone-800">Canlı Borsa Fiyatları</h2>
+            <h2 className="text-base font-semibold text-stone-800 dark:text-stone-100">Canlı Borsa Fiyatları</h2>
             {data && (
-              <p className="text-xs text-stone-400">
+              <p className="text-xs text-stone-400 dark:text-stone-500">
                 {data.source || data.bourse_name} • Bülten: {data.date}
               </p>
             )}
@@ -297,7 +301,7 @@ function MarketPricesCard() {
         <select
           value={bourse}
           onChange={(e) => setBourse(e.target.value)}
-          className="cursor-pointer rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 shadow-sm outline-none transition hover:border-green-300 focus:border-green-400"
+          className="cursor-pointer rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-700 shadow-sm outline-none transition hover:border-green-300 focus:border-green-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:border-green-600"
           aria-label="Borsa seçimi"
         >
           {BOURSE_OPTIONS.map((o) => (
@@ -314,7 +318,7 @@ function MarketPricesCard() {
             <TireLoader className="h-[22px] w-[22px]" />
           </div>
         ) : error ? (
-          <div className="flex h-24 items-center justify-center text-sm text-red-500">{error}</div>
+          <div className="flex h-24 items-center justify-center text-sm text-red-500 dark:text-red-400">{error}</div>
         ) : (
           <>
             <div className="overflow-hidden">
@@ -322,22 +326,22 @@ function MarketPricesCard() {
                 {[...(data?.prices || []), ...(data?.prices || [])].map((p, i) => (
                   <li
                     key={`${p.product}-${i}`}
-                    className="w-[260px] flex-shrink-0 mr-4 rounded-2xl border border-stone-100 bg-stone-50 p-4 transition hover:-translate-y-0.5 hover:bg-farm-50 hover:shadow-soft"
+                    className="w-[260px] flex-shrink-0 mr-4 rounded-2xl border border-stone-100 bg-stone-50 p-4 transition hover:-translate-y-0.5 hover:bg-farm-50 hover:shadow-soft dark:border-stone-800 dark:bg-stone-800/70 dark:hover:bg-stone-800"
                   >
                     <div className="mb-3 flex items-center justify-between gap-2">
                       <ProductBadge product={p.product} size={16} />
                       <TrendBadge changePct={p.change_pct} available={p.available} />
                     </div>
-                    <p className="mb-1 text-2xl font-bold text-stone-800">
+                    <p className="mb-1 text-2xl font-bold text-stone-800 dark:text-stone-100">
                       {p.available ? `${fmtPrice(p.price_avg)} ₺` : '—'}
                     </p>
-                    <p className="text-xs text-stone-400">
+                    <p className="text-xs text-stone-400 dark:text-stone-500">
                       {p.available
                         ? `${fmtPrice(p.price_min)} – ${fmtPrice(p.price_max)} ₺/kg`
                         : 'Bu ürün için işlem bulunamadı'}
                     </p>
                     {p.quantity && (
-                      <p className="mt-1.5 text-xs font-medium text-emerald-700">
+                      <p className="mt-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
                         {safeNum(p.quantity).toLocaleString('tr-TR')} kg işlem hacmi
                       </p>
                     )}
@@ -346,7 +350,7 @@ function MarketPricesCard() {
               </ul>
             </div>
             {data?.updated_at && (
-              <p className="mt-3 text-center text-[11px] text-stone-300">
+              <p className="mt-3 text-center text-[11px] text-stone-300 dark:text-stone-600">
                 Gerçek zamanlı web kazıma • Son güncelleme:{' '}
                 {new Date(data.updated_at).toLocaleTimeString('tr-TR')}
               </p>
@@ -427,14 +431,14 @@ export default function Dashboard() {
         value: fmtMoney(totalProfit),
         sub: totalProfit < 0 ? 'Zararda' : 'Kârda',
         icon: totalProfit >= 0 ? TrendingUp : TrendingDown,
-        cls: totalProfit >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600',
+        cls: totalProfit >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400',
       },
       {
         label: 'Fiziksel Stok',
         value: `${fmt(totalStock)} ton`,
         sub: 'Depoda kalan ürün',
         icon: Warehouse,
-        cls: 'bg-amber-100 text-amber-700',
+        cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
         clickable: true,
         modal: 'stock',
       },
@@ -443,7 +447,7 @@ export default function Dashboard() {
         value: `${fmt(totalEmanet)} ton`,
         sub: 'Emanette bekleyen',
         icon: Package,
-        cls: 'bg-farm-100 text-green-700',
+        cls: 'bg-farm-100 text-green-700 dark:bg-farm-900/40 dark:text-green-400',
         clickable: true,
         modal: 'emanet',
       },
@@ -452,7 +456,7 @@ export default function Dashboard() {
         value: fmtMoney(totalCiro),
         sub: 'Satışlardan elde edilen gelir',
         icon: Banknote,
-        cls: 'bg-sky-100 text-sky-700',
+        cls: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400',
       },
     ]
 
@@ -474,12 +478,12 @@ export default function Dashboard() {
         subtitle="Ürün bazlı anlık stok ve finansal durum"
         right={
           <>
-            <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
-              <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Hasat Yılı</span>
+            <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm dark:border-stone-700 dark:bg-stone-800">
+              <span className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Hasat Yılı</span>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
+                className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none dark:text-stone-200"
                 aria-label="Hasat yılı seçimi"
               >
                 {YEAR_OPTIONS.map((o) => (
@@ -492,7 +496,7 @@ export default function Dashboard() {
             <button
               onClick={handleExport}
               disabled={exporting}
-              className="flex items-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-green-800 disabled:opacity-60"
+              className="flex items-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-green-800 disabled:opacity-60 dark:bg-green-600 dark:hover:bg-green-500"
               title="Tüm verileri formüllerle Excel'e aktar"
             >
               {exporting ? <TireLoader className="h-4 w-4" /> : <FileSpreadsheet size={16} />}
@@ -502,10 +506,10 @@ export default function Dashboard() {
         }
       />
 
-      {exportError && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{exportError}</p>}
+      {exportError && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-400">{exportError}</p>}
 
       {error && (
-        <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+        <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-400">{error}</p>
       )}
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -521,21 +525,21 @@ export default function Dashboard() {
             }
             className={
               s.clickable
-                ? 'card group cursor-pointer p-5 transition-all duration-300 hover:-translate-y-1 hover:bg-farm-50 hover:shadow-xl hover:ring-2 hover:ring-green-300'
+                ? 'card group cursor-pointer p-5 transition-all duration-300 hover:-translate-y-1 hover:bg-farm-50 hover:shadow-xl hover:ring-2 hover:ring-green-300 dark:hover:bg-stone-800/70 dark:hover:ring-green-600/50'
                 : 'card p-5'
             }
             title={s.clickable ? 'Detayları görüntülemek için tıklayın' : undefined}
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-stone-500 group-hover:text-green-800">{s.label}</p>
-                <p className={`mt-1 text-2xl font-bold ${totalProfit >= 0 && s.label === 'Toplam Kâr/Zarar' ? 'text-green-700' : 'text-stone-800'}`}>
+                <p className="text-sm text-stone-500 group-hover:text-green-800 dark:text-stone-400 dark:group-hover:text-green-400">{s.label}</p>
+                <p className={`mt-1 text-2xl font-bold ${totalProfit >= 0 && s.label === 'Toplam Kâr/Zarar' ? 'text-green-700 dark:text-green-500' : 'text-stone-800 dark:text-stone-100'}`}>
                   {s.value}
                 </p>
-                <p className="mt-0.5 flex items-center gap-1 text-xs text-stone-400">
+                <p className="mt-0.5 flex items-center gap-1 text-xs text-stone-400 dark:text-stone-500">
                   {s.sub}
                   {s.clickable && (
-                    <span className="inline-flex items-center gap-0.5 font-semibold text-green-700 opacity-60 transition group-hover:translate-x-0.5 group-hover:opacity-100">
+                    <span className="inline-flex items-center gap-0.5 font-semibold text-green-700 opacity-60 transition group-hover:translate-x-0.5 group-hover:opacity-100 dark:text-green-500">
                       Detay göster <ChevronRight size={12} />
                     </span>
                   )}
@@ -555,7 +559,7 @@ export default function Dashboard() {
 
       <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="card p-4">
-          <h2 className="mb-3 text-lg font-semibold text-stone-800">Ürün Bazlı Kâr/Zarar (₺)</h2>
+          <h2 className="mb-3 text-lg font-semibold text-stone-800 dark:text-stone-100">Ürün Bazlı Kâr/Zarar (₺)</h2>
           {loading ? (
             <div className="flex h-80 w-full items-center justify-center">
               <TireLoader className="h-[26px] w-[26px]" />
@@ -565,7 +569,7 @@ export default function Dashboard() {
           )}
         </div>
         <div className="card p-4">
-          <h2 className="mb-3 text-lg font-semibold text-stone-800">Yıllara Göre Kâr/Zarar Karşılaştırması (₺)</h2>
+          <h2 className="mb-3 text-lg font-semibold text-stone-800 dark:text-stone-100">Yıllara Göre Kâr/Zarar Karşılaştırması (₺)</h2>
           {loading ? (
             <div className="flex h-80 w-full items-center justify-center">
               <TireLoader className="h-[26px] w-[26px]" />
@@ -580,7 +584,7 @@ export default function Dashboard() {
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[900px] text-sm">
           <thead>
-            <tr className="border-b border-stone-100 bg-stone-50">
+            <tr className="border-b border-stone-100 bg-stone-50 dark:border-stone-800 dark:bg-stone-800/50">
               <th className="th">Ürün</th>
               <th className="th">Alınan (ton)</th>
               <th className="th">Alış Maliyeti (₺)</th>
@@ -594,7 +598,7 @@ export default function Dashboard() {
           </thead>
           <tbody>
             {yearRows.map((r) => (
-              <tr key={r.product_name} className="border-b border-stone-50 hover:bg-farm-50/50">
+              <tr key={r.product_name} className="border-b border-stone-50 hover:bg-farm-50/50 dark:border-stone-800 dark:hover:bg-stone-800/50">
                 <td className="td">
                   <ProductBadge product={r.product_name} />
                 </td>
@@ -604,8 +608,8 @@ export default function Dashboard() {
                 <td className="td">{fmt(r.sold_quantity)}</td>
                 <td className="td">{fmt(r.avg_sell_price, 2)}</td>
                 <td className="td">{fmt(r.emanet_balance)}</td>
-                <td className={`td font-semibold ${r.physical_stock < 0 ? 'text-red-600' : ''}`}>{fmt(r.physical_stock)}</td>
-                <td className={`td font-semibold ${r.profit_loss >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                <td className={`td font-semibold ${r.physical_stock < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>{fmt(r.physical_stock)}</td>
+                <td className={`td font-semibold ${r.profit_loss >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                   {fmt(r.profit_loss, 2)}
                 </td>
               </tr>
@@ -616,15 +620,15 @@ export default function Dashboard() {
 
         <div className="flex flex-col gap-3 p-3 sm:p-4 md:hidden">
           {yearRows.map((r) => (
-            <div key={r.product_name} className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft">
-              <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3">
+            <div key={r.product_name} className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft dark:border-stone-800 dark:bg-stone-900">
+              <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3 dark:border-stone-800">
                 <div className="flex min-w-0 items-center gap-2.5">
                   <ProductBadge product={r.product_name} showName={false} size={18} />
-                  <span className="truncate text-base font-semibold text-stone-800">{r.product_name}</span>
+                  <span className="truncate text-base font-semibold text-stone-800 dark:text-stone-100">{r.product_name}</span>
                 </div>
                 <span
                   className={`shrink-0 rounded-lg px-2.5 py-1 text-sm font-bold ${
-                    r.profit_loss >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
+                    r.profit_loss >= 0 ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400'
                   }`}
                 >
                   {fmt(r.profit_loss, 2)} ₺
@@ -632,28 +636,28 @@ export default function Dashboard() {
               </div>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                 <div className="flex items-center justify-between gap-2">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Alınan (ton)</dt>
-                  <dd className="text-sm font-medium text-stone-700">{fmt(r.total_purchased_quantity)}</dd>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Alınan (ton)</dt>
+                  <dd className="text-sm font-medium text-stone-700 dark:text-stone-300">{fmt(r.total_purchased_quantity)}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Alış Maliyeti (₺)</dt>
-                  <dd className="text-sm font-medium text-stone-700">{fmt(r.total_purchased_amount, 2)}</dd>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Alış Maliyeti (₺)</dt>
+                  <dd className="text-sm font-medium text-stone-700 dark:text-stone-300">{fmt(r.total_purchased_amount, 2)}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Satılan (ton)</dt>
-                  <dd className="text-sm font-medium text-stone-700">{fmt(r.sold_quantity)}</dd>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Satılan (ton)</dt>
+                  <dd className="text-sm font-medium text-stone-700 dark:text-stone-300">{fmt(r.sold_quantity)}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Ort. Satış (₺/kg)</dt>
-                  <dd className="text-sm font-medium text-stone-700">{fmt(r.avg_sell_price, 2)}</dd>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Ort. Satış (₺/kg)</dt>
+                  <dd className="text-sm font-medium text-stone-700 dark:text-stone-300">{fmt(r.avg_sell_price, 2)}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Emanet (ton)</dt>
-                  <dd className="text-sm font-medium text-stone-700">{fmt(r.emanet_balance)}</dd>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Emanet (ton)</dt>
+                  <dd className="text-sm font-medium text-stone-700 dark:text-stone-300">{fmt(r.emanet_balance)}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400">Güncel Stok (ton)</dt>
-                  <dd className={`text-sm font-semibold ${r.physical_stock < 0 ? 'text-red-600' : 'text-stone-700'}`}>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Güncel Stok (ton)</dt>
+                  <dd className={`text-sm font-semibold ${r.physical_stock < 0 ? 'text-red-600 dark:text-red-400' : 'text-stone-700 dark:text-stone-300'}`}>
                     {fmt(r.physical_stock)}
                   </dd>
                 </div>
@@ -661,7 +665,7 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
-        {!loading && yearRows.length === 0 && <p className="p-4 text-stone-500">Henüz kayıt yok.</p>}
+        {!loading && yearRows.length === 0 && <p className="p-4 text-stone-500 dark:text-stone-400">Henüz kayıt yok.</p>}
       </div>
 
       {stockModalOpen && (

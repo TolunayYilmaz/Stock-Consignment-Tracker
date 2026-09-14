@@ -11,9 +11,9 @@ import { PRODUCTS, TRANSACTION_TYPES } from '../api/constants'
 import { getHarvestYearOptions, getHarvestYearFilterOptions } from '../utils/getHarvestYearOptions'
 
 const typeCls = {
-  Emanet: 'bg-amber-100 text-amber-700',
-  'Emanetten Alış': 'bg-blue-100 text-blue-700',
-  'Normal Alış': 'bg-green-100 text-green-700',
+  Emanet: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+  'Emanetten Alış': 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
+  'Normal Alış': 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400',
 }
 
 const HARVEST_YEAR_OPTIONS = getHarvestYearOptions()
@@ -205,9 +205,9 @@ export default function Transactions() {
             value={form.price}
             onChange={onChange}
             disabled={form.type === 'Emanet'}
-            className="input-field disabled:bg-stone-100"
+            className="input-field disabled:bg-stone-100 dark:disabled:bg-stone-700"
           />
-          {form.type === 'Emanet' && <p className="mt-1 text-[11px] text-amber-600">Emanette fiyat otomatik 0</p>}
+          {form.type === 'Emanet' && <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400">Emanette fiyat otomatik 0</p>}
         </div>
         <div>
           <label className="label">Tarih</label>
@@ -219,15 +219,15 @@ export default function Transactions() {
             İşlemi Kaydet
           </button>
         </div>
-        {formError && <p className="text-sm text-red-600 sm:col-span-2 lg:col-span-3">{formError}</p>}
+        {formError && <p className="text-sm text-red-600 dark:text-red-400 sm:col-span-2 lg:col-span-3">{formError}</p>}
       </form>
 
-      {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-      {deleteError && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{deleteError}</p>}
+      {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-400">{error}</p>}
+      {deleteError && <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-400">{deleteError}</p>}
 
       <div className="card mb-4 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-xs">
-          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500" />
           <input
             type="text"
             value={searchQuery}
@@ -238,12 +238,12 @@ export default function Transactions() {
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
-            <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Hasat Yılı</span>
+          <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm dark:border-stone-700 dark:bg-stone-800">
+            <span className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Hasat Yılı</span>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
+              className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none dark:text-stone-200"
               aria-label="Hasat yılı seçimi"
             >
               {FILTER_YEAR_OPTIONS.map((o) => (
@@ -253,12 +253,12 @@ export default function Transactions() {
               ))}
             </select>
           </div>
-          <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
-            <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Ürün</span>
+          <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm dark:border-stone-700 dark:bg-stone-800">
+            <span className="text-xs font-semibold uppercase tracking-wide text-stone-400 dark:text-stone-500">Ürün</span>
             <select
               value={selectedProduct}
               onChange={(e) => setSelectedProduct(e.target.value)}
-              className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
+              className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none dark:text-stone-200"
               aria-label="Ürün tipi seçimi"
             >
               <option value="Tümü">Tümü</option>
@@ -282,7 +282,7 @@ export default function Transactions() {
             <div className="hidden md:block">
               <table className="w-full min-w-[940px] text-sm">
                 <thead>
-                  <tr className="border-b border-stone-100 bg-stone-50">
+                  <tr className="border-b border-stone-100 bg-stone-50 dark:border-stone-800 dark:bg-stone-800/50">
                     <th className="th">Tarih</th>
                     <th className="th">Müşteri</th>
                     <th className="th">İşlem</th>
@@ -296,18 +296,18 @@ export default function Transactions() {
                 </thead>
                 <tbody>
                   {filteredTransactions.map((t) => (
-                    <tr key={t.id} className="border-b border-stone-50 hover:bg-farm-50/50">
+                    <tr key={t.id} className="border-b border-stone-50 hover:bg-farm-50/50 dark:border-stone-800 dark:hover:bg-stone-800/50">
                       <td className="td">{new Date(t.date).toLocaleDateString('tr-TR')}</td>
-                      <td className="td font-semibold text-stone-800">{t.customer_name}</td>
+                      <td className="td font-semibold text-stone-800 dark:text-stone-100">{t.customer_name}</td>
                       <td className="td">
-                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeCls[t.type] || 'bg-stone-100 text-stone-600'}`}>
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeCls[t.type] || 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400'}`}>
                           {t.type}
                         </span>
                       </td>
                       <td className="td">
                         <ProductBadge product={t.product_name} />
                       </td>
-                      <td className="td font-medium text-stone-600">{t.harvest_year || '-'}</td>
+                      <td className="td font-medium text-stone-600 dark:text-stone-400">{t.harvest_year || '-'}</td>
                       <td className="td">{t.quantity.toLocaleString('tr-TR')}</td>
                       <td className="td">{t.price.toLocaleString('tr-TR')}</td>
                       <td className="td font-medium">{(t.quantity * t.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}</td>
@@ -316,7 +316,7 @@ export default function Transactions() {
                           <button
                             type="button"
                             onClick={() => openEditModal(t)}
-                            className="rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700"
+                            className="rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/40 dark:hover:text-blue-400"
                             title="İşlemi düzenle"
                           >
                             <Pencil size={18} />
@@ -327,7 +327,7 @@ export default function Transactions() {
                               setDeleteError('')
                               setDeleteId(t.id)
                             }}
-                            className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                            className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/40 dark:hover:text-red-400"
                             title="İşlemi sil"
                           >
                             <Trash2 size={18} />
@@ -342,19 +342,19 @@ export default function Transactions() {
 
             <div className="flex flex-col gap-3 p-3 sm:p-4 md:hidden">
               {filteredTransactions.map((t) => (
-                <div key={t.id} className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft">
-                  <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3">
+                <div key={t.id} className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft dark:border-stone-800 dark:bg-stone-900">
+                  <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3 dark:border-stone-800">
                     <div className="flex min-w-0 items-center gap-2.5">
-                      <span className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeCls[t.type] || 'bg-stone-100 text-stone-600'}`}>
+                      <span className={`inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeCls[t.type] || 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400'}`}>
                         {t.type}
                       </span>
-                      <span className="truncate text-base font-semibold text-stone-800">{t.customer_name}</span>
+                      <span className="truncate text-base font-semibold text-stone-800 dark:text-stone-100">{t.customer_name}</span>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
                       <button
                         type="button"
                         onClick={() => openEditModal(t)}
-                        className="shrink-0 rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700"
+                        className="shrink-0 rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/40 dark:hover:text-blue-400"
                         title="İşlemi düzenle"
                       >
                         <Pencil size={18} />
@@ -365,7 +365,7 @@ export default function Transactions() {
                           setDeleteError('')
                           setDeleteId(t.id)
                         }}
-                        className="shrink-0 rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                        className="shrink-0 rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/40 dark:hover:text-red-400"
                         title="İşlemi sil"
                       >
                         <Trash2 size={18} />
@@ -373,29 +373,29 @@ export default function Transactions() {
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Tarih</span>
-                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 text-right">{new Date(t.date).toLocaleDateString('tr-TR')}</span>
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50 dark:border-stone-800">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Tarih</span>
+                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 dark:text-stone-100 text-right">{new Date(t.date).toLocaleDateString('tr-TR')}</span>
                     </div>
-                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Hasat Yılı</span>
-                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 text-right">{t.harvest_year || '-'}</span>
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50 dark:border-stone-800">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Hasat Yılı</span>
+                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 dark:text-stone-100 text-right">{t.harvest_year || '-'}</span>
                     </div>
-                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Ürün</span>
-                      <span className="flex items-center gap-2 text-sm font-medium text-stone-800 text-right"><ProductBadge product={t.product_name} /></span>
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50 dark:border-stone-800">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Ürün</span>
+                      <span className="flex items-center gap-2 text-sm font-medium text-stone-800 dark:text-stone-100 text-right"><ProductBadge product={t.product_name} /></span>
                     </div>
-                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Miktar</span>
-                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 text-right">{t.quantity.toLocaleString('tr-TR')} ton</span>
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50 dark:border-stone-800">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Miktar</span>
+                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 dark:text-stone-100 text-right">{t.quantity.toLocaleString('tr-TR')} ton</span>
                     </div>
-                    <div className="flex items-center justify-between py-2 border-b border-stone-50">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Fiyat</span>
-                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 text-right">{t.price.toLocaleString('tr-TR')} ₺/kg</span>
+                    <div className="flex items-center justify-between py-2 border-b border-stone-50 dark:border-stone-800">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Fiyat</span>
+                      <span className="whitespace-nowrap text-sm font-medium text-stone-800 dark:text-stone-100 text-right">{t.price.toLocaleString('tr-TR')} ₺/kg</span>
                     </div>
                     <div className="flex items-center justify-between py-2 last:border-0">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">Tutar</span>
-                      <span className="whitespace-nowrap text-base font-bold text-stone-800 text-right">{(t.quantity * t.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺</span>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500">Tutar</span>
+                      <span className="whitespace-nowrap text-base font-bold text-stone-800 dark:text-stone-100 text-right">{(t.quantity * t.price).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺</span>
                     </div>
                   </div>
                 </div>
@@ -403,9 +403,9 @@ export default function Transactions() {
             </div>
           </>
         )}
-        {!loading && transactions.length === 0 && <p className="p-4 text-stone-500">Henüz işlem eklenmemiş.</p>}
+        {!loading && transactions.length === 0 && <p className="p-4 text-stone-500 dark:text-stone-400">Henüz işlem eklenmemiş.</p>}
         {!loading && transactions.length > 0 && filteredTransactions.length === 0 && (
-          <div className="flex items-center justify-center gap-2 px-4 py-10 text-stone-500">
+          <div className="flex items-center justify-center gap-2 px-4 py-10 text-stone-500 dark:text-stone-400">
             <Search size={18} />
             <p className="text-sm">Bu kriterlere uygun işlem bulunamadı.</p>
           </div>
@@ -420,14 +420,14 @@ export default function Transactions() {
               if (!updating) setIsEditModalOpen(false)
             }}
           />
-          <form onSubmit={handleUpdate} className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <form onSubmit={handleUpdate} className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-stone-900">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-                <Pencil className="text-blue-600" size={18} />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/40">
+                <Pencil className="text-blue-600 dark:text-blue-400" size={18} />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-stone-800">İşlemi Düzenle</h3>
-                <p className="text-sm text-stone-500">İşlem kaydını güncelleyin ve değişiklikleri kaydedin.</p>
+                <h3 className="text-lg font-semibold text-stone-800 dark:text-stone-100">İşlemi Düzenle</h3>
+                <p className="text-sm text-stone-500 dark:text-stone-400">İşlem kaydını güncelleyin ve değişiklikleri kaydedin.</p>
               </div>
             </div>
 
@@ -487,9 +487,9 @@ export default function Transactions() {
                   value={editForm.price}
                   onChange={onEditChange}
                   disabled={editForm.type === 'Emanet'}
-                  className="input-field disabled:bg-stone-100"
+                  className="input-field disabled:bg-stone-100 dark:disabled:bg-stone-700"
                 />
-                {editForm.type === 'Emanet' && <p className="mt-1 text-[11px] text-amber-600">Emanette fiyat otomatik 0</p>}
+                {editForm.type === 'Emanet' && <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400">Emanette fiyat otomatik 0</p>}
               </div>
               <div>
                 <label className="label">Tarih</label>
@@ -497,7 +497,7 @@ export default function Transactions() {
               </div>
             </div>
 
-            {updateError && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{updateError}</p>}
+            {updateError && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-400">{updateError}</p>}
 
             <div className="mt-6 flex justify-end gap-3">
               <button
@@ -506,14 +506,14 @@ export default function Transactions() {
                   if (!updating) setIsEditModalOpen(false)
                 }}
                 disabled={updating}
-                className="rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-semibold text-stone-600 transition hover:bg-stone-50 disabled:opacity-60"
+                className="rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-semibold text-stone-600 transition hover:bg-stone-50 disabled:opacity-60 dark:border-stone-700 dark:text-stone-400 dark:hover:bg-stone-800"
               >
                 İptal
               </button>
               <button
                 type="submit"
                 disabled={updating}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-800 disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-800 disabled:opacity-60 dark:bg-green-600 dark:hover:bg-green-500"
               >
                 {updating && <TireLoader className="h-4 w-4" />}
                 Değişiklikleri Kaydet

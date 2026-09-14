@@ -70,22 +70,22 @@ export default function Register() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-farm-100 via-farm-50 to-harvest-100 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-farm-100 via-farm-50 to-harvest-100 px-4 dark:from-stone-950 dark:via-stone-950 dark:to-stone-950">
       <div className="w-full max-w-md">
         <div className="mb-6 flex items-center justify-center gap-2.5">
           <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-700 text-white shadow-soft">
             <Tractor size={26} />
           </span>
           <div>
-            <p className="text-xl font-bold text-stone-800">Stok Emanet</p>
-            <p className="text-sm text-stone-500">Tarımsal Takip Sistemi</p>
+            <p className="text-xl font-bold text-stone-800 dark:text-stone-100">Stok Emanet</p>
+            <p className="text-sm text-stone-500 dark:text-stone-400">Tarımsal Takip Sistemi</p>
           </div>
         </div>
 
         <div className="card p-6 sm:p-8">
-          <h1 className="mb-6 text-center text-2xl font-bold text-stone-800">Kayıt Ol</h1>
+          <h1 className="mb-6 text-center text-2xl font-bold text-stone-800 dark:text-stone-100">Kayıt Ol</h1>
           {error && (
-            <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/30 dark:text-amber-400">
               <AlertCircle size={18} className="mt-0.5 shrink-0" />
               <span>{error}</span>
             </div>
@@ -93,7 +93,7 @@ export default function Register() {
 
           {success ? (
             <div className="space-y-4">
-              <div className="flex items-start gap-2.5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+              <div className="flex items-start gap-2.5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-900/40 dark:bg-green-900/30 dark:text-green-400">
                 <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
                 <span>{success}</span>
               </div>
@@ -117,7 +117,7 @@ export default function Register() {
               />
             </div>
             <div>
-              <label className="label">Şirket Adı <span className="font-normal text-stone-400">(opsiyonel)</span></label>
+              <label className="label">Şirket Adı <span className="font-normal text-stone-400 dark:text-stone-500">(opsiyonel)</span></label>
               <div className="relative">
                 <Building2 size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
                 <input
@@ -160,12 +160,12 @@ export default function Register() {
                     <div
                       key={rule.key}
                       className={`flex items-center gap-1.5 text-xs font-medium transition ${
-                        !active ? 'text-stone-400' : ok ? 'text-green-600' : 'text-stone-500'
+                        !active ? 'text-stone-400 dark:text-stone-500' : ok ? 'text-green-600 dark:text-green-400' : 'text-stone-500 dark:text-stone-400'
                       }`}
                     >
                       <span
                         className={`flex h-4 w-4 items-center justify-center rounded-full border ${
-                          !active ? 'border-stone-300' : ok ? 'border-green-500 bg-green-500 text-white' : 'border-stone-300'
+                          !active ? 'border-stone-300 dark:border-stone-600' : ok ? 'border-green-500 bg-green-500 text-white' : 'border-stone-300 dark:border-stone-600'
                         }`}
                       >
                         {ok && <CheckCircle2 size={11} />}
@@ -187,12 +187,12 @@ export default function Register() {
                 required
               />
               {confirmPassword.length > 0 && (
-                <p className={`mt-1.5 text-xs font-medium ${password === confirmPassword ? 'text-green-600' : 'text-red-500'}`}>
+                <p className={`mt-1.5 text-xs font-medium ${password === confirmPassword ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
                   {password === confirmPassword ? 'Şifreler eşleşiyor ✓' : 'Şifreler eşleşmiyor'}
                 </p>
               )}
             </div>
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-3 text-sm transition hover:border-green-300">
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-3 text-sm transition hover:border-green-300 dark:border-stone-700 dark:bg-stone-800 dark:hover:border-green-600">
               <input
                 type="checkbox"
                 checked={terms}
@@ -200,11 +200,11 @@ export default function Register() {
                 required
                 className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-green-700"
               />
-              <span className="text-stone-600">
+              <span className="text-stone-600 dark:text-stone-300">
                 <button
                   type="button"
                   onClick={() => setKvkkOpen(true)}
-                  className="font-semibold text-green-700 underline transition hover:text-green-800"
+                  className="font-semibold text-green-700 underline transition hover:text-green-800 dark:text-green-500 dark:hover:text-green-400"
                 >
                   KVKK Aydınlatma Metni
                 </button>
@@ -212,7 +212,7 @@ export default function Register() {
                 <button
                   type="button"
                   onClick={() => setTermsOpen(true)}
-                  className="font-semibold text-green-700 underline transition hover:text-green-800"
+                  className="font-semibold text-green-700 underline transition hover:text-green-800 dark:text-green-500 dark:hover:text-green-400"
                 >
                   Kullanıcı Sözleşmesi
                 </button>
@@ -224,9 +224,9 @@ export default function Register() {
               Kayıt Ol
             </button>
           </form>
-              <p className="mt-5 text-center text-sm text-stone-500">
+              <p className="mt-5 text-center text-sm text-stone-500 dark:text-stone-400">
                 Zaten hesabın var mı?{' '}
-                <Link to="/login" className="font-semibold text-green-700 hover:underline">
+                <Link to="/login" className="font-semibold text-green-700 hover:underline dark:text-green-500">
                   Giriş Yap
                 </Link>
               </p>
@@ -238,8 +238,8 @@ export default function Register() {
       {kvkkOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-stone-900/50 backdrop-blur-sm" onClick={() => setKvkkOpen(false)} />
-          <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-stone-100 bg-green-700 px-5 py-4">
+          <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-stone-900">
+            <div className="flex items-center justify-between border-b border-stone-100 bg-green-700 px-5 py-4 dark:border-stone-800">
               <div className="flex items-center gap-2 text-white">
                 <FileText size={20} />
                 <h2 className="text-lg font-bold">KVKK Aydınlatma Metni</h2>
@@ -253,28 +253,28 @@ export default function Register() {
                 <X size={20} />
               </button>
             </div>
-            <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 py-5 text-sm leading-relaxed text-stone-600">
+            <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 py-5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
               <p>
                 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) uyarınca, tarafımızca yürütülen
                 tarımsal stok ve emanet takip sistemi kapsamında verileriniz işlenmektedir.
               </p>
-              <p className="font-semibold text-stone-800">1. Veri Sorumlusu</p>
+              <p className="font-semibold text-stone-800 dark:text-stone-100">1. Veri Sorumlusu</p>
               <p>
                 Kişisel verileriniz, veri sorumlusu sıfatıyla <span className="font-semibold">Stok Emanet</span>{' '}
                 tarafından aşağıda açıklanan kapsamda işlenebilmektedir.
               </p>
-              <p className="font-semibold text-stone-800">2. İşlenen Kişisel Veriler</p>
+              <p className="font-semibold text-stone-800 dark:text-stone-100">2. İşlenen Kişisel Veriler</p>
               <p>E-posta adresiniz, kayıt tarihiniz ve sistem üzerinde oluşturduğunuz stok, satış ve emanet kayıtlarınız işlenmektedir.</p>
-              <p className="font-semibold text-stone-800">3. İşleme Amaçları</p>
+              <p className="font-semibold text-stone-800 dark:text-stone-100">3. İşleme Amaçları</p>
               <p>
                 Verileriniz; hesap oluşturma, kimlik doğrulama, ürün stok ve emanet takibinin sağlanması,
                 talep ve şikayetlerinizin yanıtlanması ile yasal yükümlülüklerin yerine getirilmesi amaçlarıyla işlenmektedir.
               </p>
-              <p className="font-semibold text-stone-800">4. Verilerin Aktarılması</p>
+              <p className="font-semibold text-stone-800 dark:text-stone-100">4. Verilerin Aktarılması</p>
               <p>
                 Kişisel verileriniz, kanuni zorunluluklar ve ilgili mevzuat hükümleri dışında üçüncü kişilerle paylaşılmamaktadır.
               </p>
-              <p className="font-semibold text-stone-800">5. Haklarınız</p>
+              <p className="font-semibold text-stone-800 dark:text-stone-100">5. Haklarınız</p>
               <p>
                 KVKK'nın 11. maddesi kapsamında; verilerinizin işlenip işlenmediğini öğrenme, düzeltilmesini veya
                 silinmesini talep etme, işlemeye itiraz etme ve zararın giderilmesini isteme haklarına sahipsiniz.
@@ -283,7 +283,7 @@ export default function Register() {
                 Aydınlatma metnini okuduğunuz ve onayladığınız için teşekkür ederiz.
               </p>
             </div>
-            <div className="border-t border-stone-100 bg-stone-50 px-5 py-4">
+            <div className="border-t border-stone-100 bg-stone-50 px-5 py-4 dark:border-stone-800 dark:bg-stone-800/50">
               <button
                 type="button"
                 onClick={() => { setTerms(true); setKvkkOpen(false) }}
@@ -300,8 +300,8 @@ export default function Register() {
       {termsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-stone-900/50 backdrop-blur-sm" onClick={() => setTermsOpen(false)} />
-          <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-stone-100 bg-green-700 px-5 py-4">
+          <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-stone-900">
+            <div className="flex items-center justify-between border-b border-stone-100 bg-green-700 px-5 py-4 dark:border-stone-800">
               <div className="flex items-center gap-2 text-white">
                 <FileText size={20} />
                 <h2 className="text-lg font-bold">Kullanıcı Sözleşmesi</h2>
@@ -315,29 +315,29 @@ export default function Register() {
                 <X size={20} />
               </button>
             </div>
-            <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 py-5 text-sm leading-relaxed text-stone-600">
+            <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 py-5 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
               <p>
                 Bu Kullanıcı Sözleşmesi ("Sözleşme"), Stok Emanet platformunun kullanımına ilişkin koşulları belirler.
                 Hesap oluşturarak aşağıdaki maddeleri kabul etmiş sayılırsınız.
               </p>
-              <p className="font-semibold text-stone-800">1. Veri İşleyen Statüsü</p>
+              <p className="font-semibold text-stone-800 dark:text-stone-100">1. Veri İşleyen Statüsü</p>
               <p>
                 Kullanıcılar, Stok Emanet sistemine kaydettikleri üçüncü kişilere ait kişisel veriler
                 (isim, telefon, finansal kayıtlar vb.) bakımından 'Veri Sorumlusu' statüsündedir.
                 Stok Emanet yalnızca 'Veri İşleyen' konumundadır.
               </p>
-              <p className="font-semibold text-stone-800">2. Hukuki Sorumluluk</p>
+              <p className="font-semibold text-stone-800 dark:text-stone-100">2. Hukuki Sorumluluk</p>
               <p>
                 Üçüncü şahıs verilerinin sisteme izinsiz veya hukuka aykırı işlenmesinden doğacak her türlü
                 hukuki, idari ve cezai sorumluluk tamamen kullanıcıya aittir. Stok Emanet sorumlu tutulamaz.
               </p>
-              <p className="font-semibold text-stone-800">3. Güvenlik</p>
+              <p className="font-semibold text-stone-800 dark:text-stone-100">3. Güvenlik</p>
               <p>
                 Kullanıcının kendi şifresini güvenli tutmamasından veya cihazındaki zafiyetlerden kaynaklanan
                 veri ihlallerinden Stok Emanet sorumlu değildir.
               </p>
             </div>
-            <div className="border-t border-stone-100 bg-stone-50 px-5 py-4">
+            <div className="border-t border-stone-100 bg-stone-50 px-5 py-4 dark:border-stone-800 dark:bg-stone-800/50">
               <button
                 type="button"
                 onClick={() => setTermsOpen(false)}
