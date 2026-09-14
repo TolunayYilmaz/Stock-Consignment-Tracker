@@ -14,6 +14,7 @@ const fmt = (n) => n?.toLocaleString('tr-TR', { maximumFractionDigits: 3 }) ?? 0
 export default function Customers() {
   const dispatch = useDispatch()
   const { items, loading, error } = useSelector((state) => state.customers)
+  const user = useSelector((state) => state.auth.user)
   const transactions = useSelector((state) => state.transactions.items)
   const sales = useSelector((state) => state.sales.items)
   const [newName, setNewName] = useState('')
@@ -141,7 +142,12 @@ export default function Customers() {
                           <button
                             type="button"
                             onClick={() =>
-                              generateCustomerStatementPDF({ customer: c, transactions, sales })
+                              generateCustomerStatementPDF({
+                                customer: c,
+                                transactions,
+                                sales,
+                                companyName: user?.company_name,
+                              })
                             }
                             className="rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700"
                             title="PDF Ekstre indir"
@@ -176,7 +182,12 @@ export default function Customers() {
                       <button
                         type="button"
                         onClick={() =>
-                          generateCustomerStatementPDF({ customer: c, transactions, sales })
+                          generateCustomerStatementPDF({
+                            customer: c,
+                            transactions,
+                            sales,
+                            companyName: user?.company_name,
+                          })
                         }
                         className="rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700"
                         title="PDF Ekstre indir"

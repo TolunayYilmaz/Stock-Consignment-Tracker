@@ -28,7 +28,7 @@ const fmtDate = (d) => {
 const fmtNum = (n) =>
   n != null ? Number(n).toLocaleString('tr-TR', { maximumFractionDigits: 3 }) : '0'
 
-export function generateCustomerStatementPDF({ customer, transactions, sales }) {
+export function generateCustomerStatementPDF({ customer, transactions, sales, companyName }) {
   const txList = (transactions || [])
     .filter((t) => t.customer_name === customer.name)
     .map((t) => ({
@@ -63,7 +63,7 @@ export function generateCustomerStatementPDF({ customer, transactions, sales }) 
   // Header
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.text('OZYER TARIM & TICARET', pageW / 2, 18, { align: 'center' })
+  doc.text(trToEn(companyName || 'TARIMSAL TAKIP SISTEMI'), pageW / 2, 18, { align: 'center' })
 
   doc.setFontSize(12)
   doc.setFont('helvetica', 'normal')
