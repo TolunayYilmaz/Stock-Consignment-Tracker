@@ -35,6 +35,7 @@ export default function Sales() {
   const [deleteError, setDeleteError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedYear, setSelectedYear] = useState('all')
+  const [selectedProduct, setSelectedProduct] = useState('Tümü')
 
   useEffect(() => {
     dispatch(fetchCustomers())
@@ -64,9 +65,11 @@ export default function Sales() {
         !q || (s.customer_name || '').toLowerCase().includes(q)
       const matchesYear =
         selectedYear === 'all' || s.harvest_year === parseInt(selectedYear, 10)
-      return matchesName && matchesYear
+      const matchesProduct =
+        selectedProduct === 'Tümü' || s.product_name === selectedProduct
+      return matchesName && matchesYear && matchesProduct
     })
-  }, [sales, searchQuery, selectedYear])
+  }, [sales, searchQuery, selectedYear, selectedProduct])
 
   const totalRevenue = useMemo(
     () => filteredSales.reduce((s, sale) => s + sale.quantity * sale.price, 0),
@@ -173,20 +176,38 @@ export default function Sales() {
             aria-label="Alıcı ara"
           />
         </div>
-        <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
-          <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Hasat Yılı</span>
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
-            className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
-            aria-label="Hasat yılı seçimi"
-          >
-            {FILTER_YEAR_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
+            <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Hasat Yılı</span>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
+              aria-label="Hasat yılı seçimi"
+            >
+              {FILTER_YEAR_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 shadow-sm">
+            <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Ürün</span>
+            <select
+              value={selectedProduct}
+              onChange={(e) => setSelectedProduct(e.target.value)}
+              className="cursor-pointer bg-transparent text-sm font-semibold text-stone-700 outline-none"
+              aria-label="Ürün tipi seçimi"
+            >
+              <option value="Tümü">Tümü</option>
+              {PRODUCTS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
