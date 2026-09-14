@@ -1,16 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Search, Trash2, UserPlus, Users } from 'lucide-react'
+import { FileText, Search, Trash2, UserPlus, Users } from 'lucide-react'
 import TireLoader from '../components/ui/TireLoader'
 import PageHeader from '../components/PageHeader'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { addCustomer, deleteCustomer, fetchCustomers } from '../store/slices/customersSlice'
+import { fetchTransactions } from '../store/slices/transactionsSlice'
+import { fetchSales } from '../store/slices/salesSlice'
+import { generateCustomerStatementPDF } from '../utils/customerStatementPDF'
 
 const fmt = (n) => n?.toLocaleString('tr-TR', { maximumFractionDigits: 3 }) ?? 0
 
 export default function Customers() {
   const dispatch = useDispatch()
   const { items, loading, error } = useSelector((state) => state.customers)
+  const transactions = useSelector((state) => state.transactions.items)
+  const sales = useSelector((state) => state.sales.items)
   const [newName, setNewName] = useState('')
   const [query, setQuery] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -21,6 +26,8 @@ export default function Customers() {
 
   useEffect(() => {
     dispatch(fetchCustomers())
+    dispatch(fetchTransactions())
+    dispatch(fetchSales())
   }, [dispatch])
 
   const onSubmit = async (e) => {
@@ -130,7 +137,17 @@ export default function Customers() {
                         )
                       })}
                       <td className="td">
-                        <div className="flex justify-end">
+                        <div className="flex justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              generateCustomerStatementPDF({ customer: c, transactions, sales })
+                            }
+                            className="rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700"
+                            title="PDF Ekstre indir"
+                          >
+                            <FileText size={18} />
+                          </button>
                           <button
                             type="button"
                             onClick={() => {
@@ -155,17 +172,29 @@ export default function Customers() {
                 <div key={c.id} className="rounded-2xl border border-stone-100 bg-white p-4 shadow-soft">
                   <div className="mb-3 flex items-center justify-between gap-3 border-b border-stone-100 pb-3">
                     <span className="truncate text-base font-semibold text-stone-800">{c.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeleteError('')
-                        setDeleteId(c.id)
-                      }}
-                      className="shrink-0 rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
-                      title="Müşteriyi sil"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          generateCustomerStatementPDF({ customer: c, transactions, sales })
+                        }
+                        className="rounded-lg p-2 text-blue-500 transition hover:bg-blue-50 hover:text-blue-700"
+                        title="PDF Ekstre indir"
+                      >
+                        <FileText size={18} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteError('')
+                          setDeleteId(c.id)
+                        }}
+                        className="rounded-lg p-2 text-red-400 transition hover:bg-red-50 hover:text-red-700"
+                        title="Müşteriyi sil"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
                   <div className="flex flex-col">
                     {products.map((p) => {

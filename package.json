@@ -3,5 +3,9 @@
   "private": true,
   "scripts": {
     "build": "npm --prefix frontend ci && npm --prefix frontend run build"
+  },
+  "dependencies": {
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8"
   }
 }
